@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import time
 
-dim = 4
+dim = 3
 
 # nimmt ein paar Vektoren und macht sie orthogonal (rechtwinklig) und normal (länge 1)
 def orthonormalisierung(ebene, dim = 4):
@@ -25,15 +25,18 @@ def orthonormalisierung(ebene, dim = 4):
 
 # nimmt 2 Vektoren (aus R4) und gibt eine dazu orthogonale (rechtwinklige) Ebene aus
 def orthogonal_ebene(ebene, dim = 4):
+    V = []
+    for i in range(len(ebene)):
+        V += [ebene[i]]
+    
     v1 = np.array(ebene[0],dtype=float).reshape(dim,1) # (Spalten-)Vektoren aus Liste
-    v2 = np.array(ebene[1],dtype=float).reshape(dim,1)
-
-    V = [ebene[0], ebene[1]]
+    print(v1)
+    #V = [ebene[0], ebene[1]]
     E= np.eye(dim) #[(1,0,0,0),(0,1,0,0),(0,0,1,0),(0,0,0,1)]
-    neu = 0
+    neu = []
     for i in range(len(v1)):
         if (-10**(-4) > v1[i]) or (v1[i] > 10**(-4)) : #Falls != 0, aber halt mit rundungsfehler
-            neu = i 
+            neu += [i] 
             """for j in range(dim):
                 if j !=i:
                     V += [E[j].tolist()]"""
@@ -41,34 +44,42 @@ def orthogonal_ebene(ebene, dim = 4):
             break # ich brauche V gar nicht
 
     # Basiswechselmatrix (multiplikation mit Vektor gibt an, wie oft jeder Basisvektor für den Vektor gebraucht wird) 
-    
-    B = np.eye(dim) #Einheitsmatrix -> wird Basiswechselmatrix
-    for i in range(dim):
-        if neu == i:
-            B[i,i] = np.array([1/v1[i]])[0,0] 
-        else:
-            B[i,neu] = -v1[i] 
+    if dim == 4:
+        v2 = np.array(ebene[1],dtype=float).reshape(dim,1) #hier, damit es keine fehlermeldung gibt
+        B = np.eye(dim) #Einheitsmatrix -> wird Basiswechselmatrix
+        for i in range(dim):
+            if neu[0] == i:
+                B[i,i] = np.array([1/v1[i]])[0,0] 
+            else:
+                B[i,neu[0]] = -v1[i] 
 
-    v2 = np.dot(B,v2) # np.dot ist Matrixmultiplikation -> macht den Basiswechsel
-    #neu2 = 0
-    for i in range(0,dim):
-        if (-10**(-4) > v2[i]) or (v2[i] > 10**(-4)) and i != neu : # um zu gucken, welcher Vektor der Einheitsmatrix linear unabhängig von den  der Ebene ist
-            #neu2 = i
-            for j in range(dim):
-                if j != i and j != neu:
-                    V += [E[j].tolist()] # Macht eine Basis der R4, die die Ebenenvektoren enthällt
-            break
-    #print(V)
+        v2 = np.dot(B,v2) # np.dot ist Matrixmultiplikation -> macht den Basiswechsel
+        #neu2 = 0
+        for i in range(0,dim):
+            if (-10**(-4) > v2[i]) or (v2[i] > 10**(-4)) and i != neu : # um zu gucken, welcher Vektor der Einheitsmatrix linear unabhängig von den  der Ebene ist
+                #neu2 = i
+                for j in range(dim):
+                    if j != i and j != neu[0]:
+                        V += [E[j].tolist()] # Macht eine Basis der R4, die die Ebenenvektoren enthällt
+                break
+        #print(V)
+        
+    elif dim == 3:
+        for j in range(dim):
+            if all(np.array([j,j,j]) != neu):
+                V += [E[j].tolist()]
+        
     V = np.array(V).reshape(dim,dim)
+    return  orthonormalisierung(V,dim)[len(ebene):dim,:] #gibt die neuen Vektoren aus, die jetzt auch orthogonal zu dem rest sind
 
-    return  orthonormalisierung(V)[2:dim,:] #gibt die neuen Vektoren aus, die jetzt auch orthogonal zu dem rest sind
+                
 
 # Ebene in der gedreht wird
 def rotation(winkel,ebene,ecken,dim = 4):
 
         # Aus Ebenen-Vektoren Orthonormale Vektoren machen
-        vektoren = orthonormalisierung(ebene)
-
+        vektoren = orthonormalisierung(ebene,dim)
+        
         g1 = vektoren[0].reshape(dim,1)
         g2 = vektoren[1].reshape(dim,1)
 
@@ -118,32 +129,34 @@ class raum():
 
     # Ebene, die fest bleibt!!!    
     def rotation(self,winkel,ebene):
-        E = orthonormalisierung(ebene)
-        E = orthogonal_ebene(E)
+        E = orthonormalisierung(ebene,self.dim)
+        E = orthogonal_ebene(E,self.dim)
         
-        epsilon = rotation(winkel,E,self.normal).reshape(1,self.dim)
+        epsilon = rotation(winkel,E,self.normal,self.dim).reshape(1,self.dim)
         return epsilon
 
     pass
 
-n = 4 #Anzahl der Räume, meist 4, <= 4 !!!
+n = 3 #Anzahl der Räume, meist 4, <= 4 !!!
 winkel = pi/2
 
 #Raum durch Normalenvekotor
 Raums = []
 for i in range(n):
-    Raums += [raum([(0,0,0,1)])]
+    Raums += [raum([(0,0,1)],3)]
 
 #Normal = np.array()    
 #print("Normal", Normal)
 
 Bereiche = []
-D_vergl = [[1,1,1,1],[1,1,1,-1],[1,1,-1,1],[1,1,-1,-1],[1,-1,1,1],[1,-1,1,-1],[1,-1,-1,1],[1,-1,-1,-1],[-1,1,1,1],[-1,1,1,-1],[-1,1,-1,1],[-1,1,-1,-1],[-1,-1,1,1],[-1,-1,1,-1],[-1,-1,-1,1],[-1,-1,-1,-1]]
+D_vergl = [[1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],[-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1]]
+#D_vergl = [[1,1,1,1],[1,1,1,-1],[1,1,-1,1],[1,1,-1,-1],[1,-1,1,1],[1,-1,1,-1],[1,-1,-1,1],[1,-1,-1,-1],[-1,1,1,1],[-1,1,1,-1],[-1,1,-1,1],[-1,1,-1,-1],[-1,-1,1,1],[-1,-1,1,-1],[-1,-1,-1,1],[-1,-1,-1,-1]]
 for i in range(2**len(Raums)):
         Bereiche += [0] 
 
 # ---Hier gehts richtig los--------------------------------------------------------
 
+#print(orthogonal_ebene([(1,0,0,0),(0,1,0,0)],4))
 
 anfang = time.time()
 r = 500 #Radius
@@ -160,7 +173,7 @@ for x in range(len(Winkel)):
     Normal = np.eye(dim)[-1].reshape(1,dim).tolist()   #[(0,0,0,1)]
     E = np.eye(dim)
     for i in range(0,len(Raums)-1):
-        plus = (Raums[i].rotation(Winkel[x], [E[i],E[(i+1)%3]])).reshape(1,dim).tolist()
+        plus = (Raums[i].rotation(Winkel[x], [E[i]])).reshape(1,dim).tolist()
         Normal += plus     #  np.array(plus).reshape(i+2,4)
     #print(Normal) 
     #print("vorher", Daten)
