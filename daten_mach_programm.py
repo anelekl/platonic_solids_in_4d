@@ -187,5 +187,5 @@ print(time.time()-anfang)
 print("fertig")
 
 with open('gemachte_daten.txt', "a") as speicher:
-    print(punkte, ";", Winkel, ";", np.array(Daten).reshape(len(Winkel),16).tolist(), "\n \n", file=speicher)
+    print(punkte, "; \n", np.array(Daten).reshape(len(Winkel),16).tolist(), ";", Winkel,  "\n \n", file=speicher)
 
