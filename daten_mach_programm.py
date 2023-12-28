@@ -30,7 +30,7 @@ def orthogonal_ebene(ebene, dim = 4):
         V += [ebene[i]]
     
     v1 = np.array(ebene[0],dtype=float).reshape(dim,1) # (Spalten-)Vektoren aus Liste
-    print(v1)
+    #print(v1)
     #V = [ebene[0], ebene[1]]
     E= np.eye(dim) #[(1,0,0,0),(0,1,0,0),(0,0,1,0),(0,0,0,1)]
     neu = []
@@ -200,6 +200,6 @@ print(anfang, time.time())
 print(time.time()-anfang)
 print("fertig")
 
-with open('el_20231228_01.txt', "a") as speicher:
-    print(punkte, ";", Winkel, ";", np.array(Daten).reshape(len(Winkel),16).tolist(), "\n \n", file=speicher)
+with open('el_20231228_02.txt', "a") as speicher:
+    print(punkte, ";", Winkel, ";", np.array(Daten).reshape(len(Winkel),2**n).tolist(), "\n \n", file=speicher)
 
