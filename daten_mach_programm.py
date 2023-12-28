@@ -201,5 +201,5 @@ print(time.time()-anfang)
 print("fertig")
 
 with open('el_20231228_03.txt', "a") as speicher:
-    print(punkte, ";", Winkel, ";", np.array(Daten).reshape(len(Winkel),2**n).tolist(), "\n \n", file=speicher)
+    print(punkte, ";", np.array(Daten).reshape(len(Winkel),2**n).tolist(), ";", Winkel,  "\n \n", file=speicher)
 
