@@ -159,13 +159,13 @@ for i in range(2**len(Raums)):
 #print(orthogonal_ebene([(1,0,0,0),(0,1,0,0)],4))
 
 anfang = time.time()
-r = 500 #Radius
+r = 100_000 #Radius
 d = []
 Winkel = np.linspace(0,2*pi,200)
 Daten = []
 
 for x in range(len(Winkel)):
-    print("still running")
+    print("still running", x)
     for b in range(len(Bereiche)):
         Bereiche[b] = 0
 
@@ -200,6 +200,6 @@ print(anfang, time.time())
 print(time.time()-anfang)
 print("fertig")
 
-with open('el_20231228_03.txt', "a") as speicher:
-    print(punkte, ";", np.array(Daten).reshape(len(Winkel),2**n).tolist(), ";", Winkel,  "\n \n", file=speicher)
+with open('el_20231229_02.txt', "a") as speicher:
+    print(punkte, "; \n", np.array(Daten).reshape(len(Winkel),2**n).tolist(), "\n ;", Winkel,  "\n \n", file=speicher)
 
