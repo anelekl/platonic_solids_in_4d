@@ -1,5 +1,6 @@
 
 from math import *
+import numpy as np
 
 def side_len(n):
     return pi -((2*pi)/n) 
@@ -36,12 +37,16 @@ for i in archimedian:
 for i in range(3,11):
     print('(', i, ', 4 , 4 ) :' , raumwinkel((i,4,4))/ pi , "pi")
 
-Winkel = np.linspace(0,2*pi)
+Winkel = np.linspace(0,2*pi,200)
 Daten  = []
 for i in Winkel:
-    Daten.append(raumwinkel((pi/2,acos(-1/sqrt(2+tan(i))),acos(-1/sqrt(2+tan(i))))))
+    if acos(-1/sqrt(2+tan(i)**2)) == 0:
+        Daten.append(0)
+    else:    
+        Daten.append(raumwinkel_seiten((pi/2,acos(-1/sqrt(2+tan(i)**2)),acos(-1/sqrt(2+tan(i)**2)))))
 
-
+with open('el_20231229_07.txt', "a") as speicher:
+    print("; \n", np.array(Daten).reshape(len(Winkel),1).tolist(), "\n ;", Winkel,  "\n \n", file=speicher)
 
 arch_group = {(3, 3, 3) : 0.17547965609182192,
                (4, 4, 4) : 0.5,
