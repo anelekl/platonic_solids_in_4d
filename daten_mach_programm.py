@@ -161,7 +161,7 @@ for i in range(2**len(Raums)):
 anfang = time.time()
 r = 500 #Radius
 d = []
-Winkel = np.linspace(0,2*pi,200)
+Winkel = [pi/5,4*pi/5] #np.linspace(0,2*pi,200)
 Daten = []
 
 for x in range(len(Winkel)):
@@ -177,7 +177,7 @@ for x in range(len(Winkel)):
         Normal += plus     #  np.array(plus).reshape(i+2,4)
     #print(Normal) 
     #print("vorher", Daten)
-    while punkte < 100_000:
+    while punkte < 1_000_000:
         d = [0 for i in range(n)]
         #unnotige_punkte += 1
         p = np.array([[random.randint(-r,r)/r for i in range(dim)]]).reshape(dim,1)
@@ -200,6 +200,6 @@ print(anfang, time.time())
 print(time.time()-anfang)
 print("fertig")
 
-with open('el_20231229_03.txt', "a") as speicher:
+with open('el_20231229_06.txt', "a") as speicher:
     print(punkte, "; \n", np.array(Daten).reshape(len(Winkel),2**n).tolist(), "\n ;", Winkel,  "\n \n", file=speicher)
 
