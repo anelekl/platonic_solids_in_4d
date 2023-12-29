@@ -22,6 +22,7 @@ def orthonormalisierung(ebene):
     return M.reshape(len(ebene),4) # Ausgabe als (Zeilen-)Vektor 
 
 # nimmt 2 Vektoren (aus R4) und gibt eine dazu orthogonale (rechtwinklige) Ebene aus
+<<<<<<< HEAD
 def orthogonal_ebene(ebene):
     v1 = np.array(ebene[0],dtype=float).reshape(4,1) # (Spalten-)Vektoren aus Liste
     v2 = np.array(ebene[1],dtype=float).reshape(4,1)
@@ -29,6 +30,18 @@ def orthogonal_ebene(ebene):
     V = [ebene[0], ebene[1]]
     E= [(1,0,0,0),(0,1,0,0),(0,0,1,0),(0,0,0,1)]
     neu = 0
+=======
+def orthogonal_ebene(ebene, dim = 4):
+    V = []
+    for i in range(len(ebene)):
+        V += [ebene[i]]
+    
+    v1 = np.array(ebene[0],dtype=float).reshape(dim,1) # (Spalten-)Vektoren aus Liste
+    #print(v1)
+    #V = [ebene[0], ebene[1]]
+    E= np.eye(dim) #[(1,0,0,0),(0,1,0,0),(0,0,1,0),(0,0,0,1)]
+    neu = []
+>>>>>>> feb31d9d9aa4f269461fa84ea0354c65c54ce4d9
     for i in range(len(v1)):
         if (-10**(-4) > v1[i]) or (v1[i] > 10**(-4)) : #Falls != 0, aber halt mit rundungsfehler
             neu = i 
@@ -145,12 +158,20 @@ anfang = time.time()
 unnotige_punkte = 0
 r = 500 #Radius
 d = []
+<<<<<<< HEAD
 Winkel = np.linspace(0,2*pi,200)
 Daten = []
 
 for x in range(len(Winkel)):
     print("still running")
     #print("mehr vorher", Daten)
+=======
+Winkel = [pi/5,4*pi/5] #np.linspace(0,2*pi,200)
+Daten = []
+
+for x in range(len(Winkel)):
+    print("still running", x)
+>>>>>>> feb31d9d9aa4f269461fa84ea0354c65c54ce4d9
     for b in range(len(Bereiche)):
         Bereiche[b] = 0
     #print(Daten)     
@@ -163,7 +184,11 @@ for x in range(len(Winkel)):
         Normal += plus     #  np.array(plus).reshape(i+2,4)
     #print(Normal) 
     #print("vorher", Daten)
+<<<<<<< HEAD
     while punkte < 100_000:
+=======
+    while punkte < 1_000_000:
+>>>>>>> feb31d9d9aa4f269461fa84ea0354c65c54ce4d9
         d = [0 for i in range(n)]
         #unnotige_punkte += 1
         p = np.array([[random.randint(-r,r)/r for i in range(4)]]).reshape(4,1)
@@ -186,6 +211,11 @@ for x in range(len(Winkel)):
 print(time.time()-anfang)
 print("fertig")
 
+<<<<<<< HEAD
 with open('gemachte_daten.txt', "a") as speicher:
     print(punkte, ";", Winkel, ";", np.array(Daten).reshape(len(Winkel),16).tolist(), "\n \n", file=speicher)
+=======
+with open('el_20231229_06.txt', "a") as speicher:
+    print(punkte, "; \n", np.array(Daten).reshape(len(Winkel),2**n).tolist(), "\n ;", Winkel,  "\n \n", file=speicher)
+>>>>>>> feb31d9d9aa4f269461fa84ea0354c65c54ce4d9
 
