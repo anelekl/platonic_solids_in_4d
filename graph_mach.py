@@ -55,12 +55,13 @@ def graph_off(x, y_werte ,vergleich = False):
 
         a_liste = []
         for i in x_2:
-            a = acos(cos(i)**2)
+            a = acos(-cos(i)**2)
+            a_2 = acos(cos(i)**2)
             #a = acos(- 1 / sqrt(tan(i)**2+2))
             a_liste.append(a)
-            vergleich.append(100_000/(4*pi)* ( - a + 2*i))
-            vergleich_2.append(100_000/(4*pi)* (2*pi - (2*i + a)))
-            vergleich_3.append(100_000/(4*pi)* ( a))
+            vergleich.append(100_000/(4*pi)* ( a + 2*(pi/2-i)))
+            vergleich_2.append(100_000/(4*pi)*((-2*(pi/2-i) + a)))
+            vergleich_3.append(100_000/(4*pi)* (a_2))
             #vergleich.append(100_000/(4*pi)* (acos(-1/tan(a)**2) + 2*acos(1/tan(a)) -pi))
 
         plt.plot(x_2, vergleich , label = 'Vergleich', color = 'black')
@@ -71,7 +72,7 @@ def graph_off(x, y_werte ,vergleich = False):
         #plt.plot(x_2, 50_000*(x_2/pi)*(pi-x_2)/pi, label = "$(x/pi)*(pi-x)/pi$", color = 'black')
 
     plt.legend()    
-    plt.savefig('el_20231229_03_36.png')    
+    plt.savefig('el_20231229_03_37.png')    
     plt.show()    
 
 def graph_vergleich(x, y_werte ):
