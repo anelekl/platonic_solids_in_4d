@@ -60,19 +60,27 @@ def graph_off(x, y_werte ,vergleich = False):
             #a = acos(- 1 / sqrt(tan(i)**2+2))
             a_liste.append(a)
             vergleich.append(100_000/(4*pi)* ( a + 2*(pi/2-i)))
-            vergleich_2.append(100_000/(4*pi)*((-2*(pi/2-i) + a)))
+            vergleich_2.append(100_000/(4*pi)*(2*i - a_2))
             vergleich_3.append(100_000/(4*pi)* (a_2))
             #vergleich.append(100_000/(4*pi)* (acos(-1/tan(a)**2) + 2*acos(1/tan(a)) -pi))
 
+        summen_graph = []
+        for i in range(int(len(y_listen)/2)):
+            summen_graph += [[]]
+            for j in range(len(y_listen[i])):
+                summen_graph[i].append(y_listen[2*i][j] + y_listen[2*i+1][j])
+        for i in range(len(summen_graph)):
+            plt.plot(x,summen_graph[i], label = str(i),  color = farben[i],)    
+
         plt.plot(x_2, vergleich , label = 'Vergleich', color = 'black')
-        plt.plot(x_2, vergleich_2 , color = 'black')
-        plt.plot(x_2, vergleich_3 , color = 'black')
+        plt.plot(x_2, vergleich_2 , color = 'green')
+        #plt.plot(x_2, vergleich_3 , color = 'black')
         #plt.plot(x, 50_000*((pi-x)/pi)**2, label = '$((x-pi)/pi)^2$', color= 'indigo')
         #plt.plot(x_2,50_000*(x_2/pi)**2, label = "$(x/pi)^2$", color = 'purple')
         #plt.plot(x_2, 50_000*(x_2/pi)*(pi-x_2)/pi, label = "$(x/pi)*(pi-x)/pi$", color = 'black')
 
     plt.legend()    
-    plt.savefig('el_20231229_03_37.png')    
+    plt.savefig('el_20231229_03_40.png')    
     plt.show()    
 
 def graph_vergleich(x, y_werte ):
