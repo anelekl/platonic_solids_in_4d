@@ -14,7 +14,7 @@ def orthonormalisierung(ebene):
     for k in range(1,len(ebene)): 
         summ =0
         for j in range(0,k):
-            summ= np.dot(M[j].T,M[k])* M[j] 
+            summ += np.dot(M[j].T,M[k])* M[j] 
 
         M[k] = M[k] - summ
         M[k] = M[k] / sqrt(M[k]@M[k])
@@ -146,10 +146,11 @@ unnotige_punkte = 0
 r = 500 #Radius
 d = []
 Winkel = np.linspace(0,2*pi,200)
+fester_Winkel = 2
 Daten = []
 
 for x in range(len(Winkel)):
-    print("still running" + str(x))
+    print("still running " + str(x))
     #print("mehr vorher", Daten)
     for b in range(len(Bereiche)):
         Bereiche[b] = 0
@@ -159,7 +160,7 @@ for x in range(len(Winkel)):
     Normal = [(0,0,0,1)]
     E = np.eye(4)
     for i in range(0,len(Raums)-2):
-        plus = (Raums[i].rotation(pi/2, [E[i],E[(i+1)%3]])).reshape(1,4).tolist()
+        plus = (Raums[i].rotation(fester_Winkel, [E[i],E[(i+1)%3]])).reshape(1,4).tolist()
         Normal += plus 
     Normal += (Raums[2].rotation(Winkel[x], [E[2],E[0]])).reshape(1,4).tolist()        #  np.array(plus).reshape(i+2,4)
     print(Normal) 
@@ -187,6 +188,6 @@ for x in range(len(Winkel)):
 print(time.time()-anfang)
 print("fertig")
 
-with open('el_20240104_05.txt', "a") as speicher:
+with open('el_20240104_06.txt', "a") as speicher:
     print(punkte, "; \n", np.array(Daten).reshape(len(Winkel),16).tolist(), " \n ;", Winkel,  "\n \n", file=speicher)
 
