@@ -81,9 +81,13 @@ def orthogonal_ebene(ebene, dim = 4):
 
 
 def rotation(winkel,ebene,ecken):
-
+        print("Winkel : ", winkel)
+        print("Ebene: ", ebene)
+        print("Ecken (Anfang) : ", ecken)
         # Aus Ebenen-Vektoren Orthonormale Vektoren machen
         vektoren = orthonormalisierung(ebene)
+
+        print("Ebene ortho. : ", vektoren)
 
         if not np.allclose(np.dot(vektoren[0], vektoren[1].T), 0)  :
             print("FEHLER Ebene falsch bei rotation" , 1)
@@ -101,14 +105,23 @@ def rotation(winkel,ebene,ecken):
             print("dir ist nicht mehr zu helfen!!! 2") 
             print(vektoren[1])
 
-        g1 = vektoren[0].reshape(4,1)
-        g2 = vektoren[1].reshape(4,1)
+        g1 = vektoren[0].reshape((4,1))
+        g2 = vektoren[1].reshape((4,1))
 
         # Aus zwei Orthonormalen Vektoren die Rotationsmatrix erstellen
         V = np.dot(g1,g1.T) + np.dot(g2,g2.T)
+        print("V : " , V)
         W = np.dot(g1,g2.T) - np.dot(g2,g1.T)
+        print("W : ", W)
         I = np.eye(4)
-        R = I + (cos(winkel)-1)*V + sin(winkel)*W #Rotationsmatrix
+        print("I : ", I)
+        print("cos : ", cos(winkel))
+        print("sin : ", sin(winkel))
+        print("Ding mal cos : ", np.dot((cos(winkel)-1),V))
+        print("Ding mal sin : ", np.dot(sin(winkel),W))
+
+        R = I + np.dot((cos(winkel)-1),V) + np.dot(sin(winkel),W) #Rotationsmatrix
+        print("R : ", R)
 
         #Basiswechselmatrix
         B = basisergenzung(vektoren).reshape(4,4)
@@ -120,26 +133,44 @@ def rotation(winkel,ebene,ecken):
         
         Rot = np.array([[cos(winkel),-sin(winkel),0,0],[sin(winkel),cos(winkel), 0,0],[0,0,1,0],[0,0,0,1]])
 
-        R = np.dot(B,np.dot(Rot,B.T)) #B * Rot * B.T 
+        R_2 = np.dot(B,np.dot(Rot,B.T)) #B * Rot * B.T 
 
         ecken = np.array(ecken).reshape(len(ecken),4)
         gedreht = np.dot(R,ecken.T).T # (np.exp( winkel * (np.dot(g1.T, ecken.T) * g2 - np.dot(g2.T, ecken.T)* g1) )).T # np.dot(R,ecken.T).T
+        gedreht_2 = np.dot(R_2,ecken.T).T
 
         for i in range(len(ecken)):
             w = np.dot(ecken[i], gedreht[i].T)* 1 / (sqrt(np.dot(gedreht[i],gedreht[i].T))* sqrt(np.dot(ecken[i], ecken[i].T)))
+            w_2 = np.dot(ecken[i], gedreht_2[i].T)* 1 / (sqrt(np.dot(gedreht_2[i],gedreht_2[i].T))* sqrt(np.dot(ecken[i], ecken[i].T)))
+            
+            if w < 1 and w_2 < 1:
+                print("Diff : ", acos(w) - acos(w_2))
             #print()
             #if w <= 1:
                # print(acos(w), winkel, acos(w)-winkel)
             if not np.allclose(w, cos(winkel)):
                 print("Falsche drehnung")
-                    
+
+            if not np.allclose(sqrt(np.dot(gedreht[i],gedreht[i].T)), sqrt(np.dot(ecken[i], ecken[i].T))):
+                print("Längeverschiebung!!!!!!-----------")  
+
+        print("Ecken (Ende) : ", ecken)
+        print("gedrehte Ecken : " , np.dot(R,ecken.T).T )
+        print("Winkel (echt) : ", acos( np.dot(ecken[i], gedreht[i].T) * 1 / (sqrt(np.dot(gedreht[i],gedreht[i].T))* sqrt(np.dot(ecken[i], ecken[i].T))) ))
+        print(" Skalarprodukt : ", np.dot(ecken[i], gedreht[i].T))
+        print("Länge anfang : ", np.dot(ecken[i], ecken[i].T))
+        print("Länge danach : ", sqrt(np.dot(gedreht[i],gedreht[i].T)))
+
         return np.dot(R,ecken.T).T  # Ecken mal Rot. Matrix -> neue Ecken ausgegeben
 
 fehler = 0
 einser_fehler = 0
 ortho_fehler = 0
 winkel_fehler = 0
-for x in np.linspace(0,2*pi,10):
+
+rotation(pi, [(1,1,0,0),(2,0,1,0)], [(1,2,1,1)])
+
+"""for x in (pi, 0): #  np.linspace(0,2*pi,20):
     V = np.array([[random.randint(-500,500) for i in range(4)] for j in range(4)])
 
     E = np.eye(4)
@@ -178,4 +209,4 @@ print(fehler)
 print(einser_fehler)
 print(fehler-einser_fehler)
 print(ortho_fehler)
-print(winkel_fehler)
+print(winkel_fehler)"""
