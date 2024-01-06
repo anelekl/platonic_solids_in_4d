@@ -80,7 +80,7 @@ def orthogonal_ebene(ebene, dim = 4):
 
 # Ebene in der gedreht wird
 def rotation(winkel,ebene,ecken):
-
+        #print(winkel, ebene, ecken)
         # Aus Ebenen-Vektoren Orthonormale Vektoren machen
         vektoren = orthonormalisierung(ebene)
 
@@ -115,7 +115,7 @@ def rotation(winkel,ebene,ecken):
         #Rot = np.array([[cos(winkel),-sin(winkel),0,0],[sin(winkel),cos(winkel), 0,0],[0,0,1,0],[0,0,0,1]])
 
         #R = B * Rot * B.T
-
+        #print(ecken)
         ecken = np.array(ecken).reshape(len(ecken),4)
         # (np.exp( winkel * (np.dot(g1.T, ecken.T) * g2 - np.dot(g2.T, ecken.T)* g1) )).T # np.dot(R,ecken.T).T
                     
@@ -137,6 +137,37 @@ def vier_zu_drei(punkte):
     for i in range(len(punkte)):
         punkte[i] = list(punkte[i])[0:len(punkte[i]-1)]
     return punkte    
+
+def bereich_test(punkte, normalenvektoren):
+    Bereiche = []
+    D_vergl = []
+    n = len(normalenvektoren)
+
+    for i in range(2**len(normalenvektoren)):
+        Bereiche += [0]
+        a = i
+        D_vergl += [[]]
+        for j in range(n):
+            if a% 2 == 1:
+                D_vergl[i] += [1]
+                a = a - 1
+            else: 
+                D_vergl[i] += [0]
+            a = a/2
+        D_vergl[i] = list(reversed(D_vergl[i]))
+
+    d = [-1 for i in range(n)]
+
+    for p in punkte:
+        for i in range(n):
+            if not np.dot(p,np.array(Normal[i]).reshape(4,1)) < 0:
+                d[i] = 1 
+            else: d[i] = 0    
+        
+        for b in range(len(D_vergl)):
+            if d == D_vergl[b]:
+                Bereiche[b] += 1    
+    return Bereiche
 
 class raum():
     
@@ -166,72 +197,140 @@ class koerper():
     
     pass
 
-# Funktioniert erstmal nur für Eckenfigur <3,3>
+körper_drehung = False
 
-#3 Ecken: die erste, die "mittlere", die an der alles aufeinander trifft: NICHT MIT ANGEBEN!!!
-a = - (sqrt(5)+1)/4
-c = (1 - (sqrt(5) + 1)/2)/2
-b = 1/2
+if körper_drehung:
+    # Funktioniert erstmal nur für Eckenfigur <3,3>
 
-dreid_korper =  [(a,b,c), (b,c,a), (c,a,b)] # [(1, 0, 0), (0.5, sqrt(3)/2, 0) , (0.5, sqrt(3)/6, sqrt(2/3))] # [(1,0,0),(0,1,0),(0,0,1)] 
+    #3 Ecken: die erste, die "mittlere", die an der alles aufeinander trifft: NICHT MIT ANGEBEN!!!
+    a = - (sqrt(5)+1)/4
+    c = (1 - (sqrt(5) + 1)/2)/2
+    b = 1/2
 
-#fester_korper = koerper(drei_zu_vier(dreid_korper))
+    dreid_korper = [(1,0,0),(0,1,0),(0,0,1)]  #[(1, 0, 0), (0.5, sqrt(3)/2, 0) , (0.5, sqrt(3)/6, sqrt(2/3))] #  [(a,b,c), (b,c,a), (c,a,b)]  # [(1,0,0),(0,1,0),(0,0,1)] 
 
-alle_korper = []
-for i in range(3):
-    normal = np.cross(dreid_korper[(i+2)%3],dreid_korper[(i+1)%3])
-    gespiegelt = spiegelung(normal, [dreid_korper[(i)%3]] )
-    langer = drei_zu_vier(gespiegelt)
-    alle_korper.append(koerper([langer]))
+    #fester_korper = koerper(drei_zu_vier(dreid_korper))
 
-    
-for i in alle_korper:
-    print("-------------" , i.ecken)
-
-fester_korper = koerper(drei_zu_vier(dreid_korper))
-print(fester_korper.ecken)
-
-Winkel = np.linspace(0,2*pi,201)
-distanz = [100 for i in range(3) ]
-wirkliche_distanz = [100 for i in range(3)]
-wirklicher_winkel = [10 for i in range(3)]
-kl_winkel = [10 for i in range(3) ]
-
-
-for w in Winkel:
-    #print()
-    gedrehter_korper = []
-    for i in range(2):
-        gedrehter_korper.append(alle_korper[i].rotation(w,[fester_korper.ecken[(i+2)%3],fester_korper.ecken[(i+1)%3]]))
-    gedrehter_korper.append(alle_korper[2].rotation(-w,[fester_korper.ecken[(2+2)%3],fester_korper.ecken[(2+1)%3]]))
-        
-    """for i in range(3):
-        print("gedereht ", i , gedrehter_korper[i])  """  
-    
-    
-    if np.allclose(gedrehter_korper[0], gedrehter_korper[1]):
-        print (w , "hier!!!!")
-
-
+    alle_korper = []
     for i in range(3):
-        print(gedrehter_korper[i])
+        normal = np.cross(dreid_korper[(i+2)%3],dreid_korper[(i+1)%3])
+        gespiegelt = spiegelung(normal, [dreid_korper[(i)%3]] )
+        langer = drei_zu_vier(gespiegelt)
+        alle_korper.append(koerper([langer]))
 
-        b = np.max(gedrehter_korper[i] - gedrehter_korper[(i+1)%3])
-        if b < distanz[i]:
-            distanz[i] = b
-            kl_winkel[i] = w
         
-        a = (gedrehter_korper[i] - gedrehter_korper[(i+1)%3])@(gedrehter_korper[i] - gedrehter_korper[(i+1)%3]).T
-        if  a < wirkliche_distanz[i]:
-            wirkliche_distanz[i] = a
-            wirklicher_winkel[i] = w
+    for i in alle_korper:
+        print("-------------" , i.ecken)
+
+    fester_korper = koerper(drei_zu_vier(dreid_korper))
+    print(fester_korper.ecken)
+
+    Winkel = np.linspace( 0,pi,1001)
+    distanz = [100 for i in range(3) ]
+    wirkliche_distanz = [100 for i in range(3)]
+    wirklicher_winkel = [10 for i in range(3)]
+    kl_winkel = [10 for i in range(3) ]
+
+
+    for w in Winkel:
+        #print()
+        gedrehter_korper = []
+        for i in range(2):
+            gedrehter_korper.append(alle_korper[i].rotation(w,[fester_korper.ecken[(i+2)%3],fester_korper.ecken[(i+1)%3]]))
+        gedrehter_korper.append(alle_korper[2].rotation(-w,[fester_korper.ecken[(2+2)%3],fester_korper.ecken[(2+1)%3]]))
+            
+        """for i in range(3):
+            print("gedereht ", i , gedrehter_korper[i])  """  
+        
+        
+        if np.allclose(gedrehter_korper[0], gedrehter_korper[1]):
+            print (w , "hier!!!!")
+
+
+        for i in range(3):
+            #print(gedrehter_korper[i])
+
+            b = np.max(gedrehter_korper[i] - gedrehter_korper[(i+1)%3])
+            if b < distanz[i]:
+                distanz[i] = b
+                kl_winkel[i] = w
+            
+            a = (gedrehter_korper[i] - gedrehter_korper[(i+1)%3])@(gedrehter_korper[i] - gedrehter_korper[(i+1)%3]).T
+            if  a < wirkliche_distanz[i]:
+                wirkliche_distanz[i] = a
+                wirklicher_winkel[i] = w
+
+    print(distanz)
+    print(kl_winkel)
+    print(wirkliche_distanz , wirklicher_winkel)
 
 
 
-print(distanz)
-print(kl_winkel)
-print(wirkliche_distanz , wirklicher_winkel)
+### --- Variablen --- ###
+raumdrehung =True
+
+anzahl_punkte = 1_000_000
+anzahl_winkel = 100
+Winkel = [1.82347889] #np.linspace(0,2*pi,anzahl_winkel)
+r = 500 # Radius
+dim = 4 # Dimension
+a = 3 #Anzahl der drehebenen
+Daten = [] #da werden die Daten gespeichert
+
+Raum_anfang = raum([(0,0,0,1)])
+print(Raum_anfang.normal)
+Ebenen_Matrix = np.array([[(1, 0, 0, 0), (0.5, sqrt(3)/2, 0, 0) , (0.5, sqrt(3)/6, sqrt(2/3), 0)]]).reshape(a,dim)
+
+randomm = True
+
+### --- --- ###
 
 
+punkte_zaehler = 0
+punkte = []
+anfangs_zeit = time.time()
+
+if raumdrehung:
+
+    if not randomm:
+        zeit = time.time()
+        for i in  range(-r,r):
+            for j in range(-r,r):
+                for k in range(-r,r):
+                    for l in range(-r,r):
+                        p = np.array([i/r,j/r,k/r,l/r]).reshape(1,4)
+                        if np.dot(p,p.T) <= 1:
+                            punkte += [p]
+        print(time.time()-zeit)             
+        print(len(punkte))
 
 
+    if randomm:
+        while punkte_zaehler < anzahl_punkte:
+            p = np.array([[random.randint(-r,r)/r for i in range(4)]]).reshape(1,4)
+            
+            if np.dot(p,p.T) <= 1: #wenn in Späre
+                punkte_zaehler += 1
+                punkte += [p]
+
+
+    for w in Winkel:
+
+        zeit = time.time()
+        print("still running" , w)
+        Normal = [Raum_anfang.normal]
+
+        for i in range(a):
+            neu = (Raum_anfang.rotation(w, [Ebenen_Matrix[i],Ebenen_Matrix[(i+1)%3]])).reshape(1,4).tolist()
+            Normal.append(neu)
+
+        Daten.append(bereich_test(punkte, Normal))
+        print(time.time()-zeit)
+
+
+    #with open('el_20240106_07.txt', "a") as speicher:
+     #   print(punkte_zaehler, "; \n", np.array(Daten).reshape(len(Winkel),16).tolist(), " \n ;", Winkel,  "\n \n", file=speicher)
+
+    print(time.time()- anfangs_zeit)    
+    print("fretig")
+    print(Daten)

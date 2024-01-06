@@ -210,3 +210,9 @@ print(einser_fehler)
 print(fehler-einser_fehler)
 print(ortho_fehler)
 print(winkel_fehler)"""
+
+
+a = 234532
+b = str(a)
+c = list(b)
+print(a ,b ,c)
