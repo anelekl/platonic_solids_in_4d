@@ -169,6 +169,11 @@ def bereich_test(punkte, normalenvektoren):
                 Bereiche[b] += 1    
     return Bereiche
 
+def winkel(vektor1, vektor2):
+    vektor1 = vektor1 / sqrt(vektor1@vektor1)
+    vektor2 = vektor2 / sqrt(vektor2@vektor2)
+    return acos(np.dot(vektor1, vektor2.T))
+
 class raum():
     
     def __init__(self, normalenvektor) -> None:
@@ -276,6 +281,7 @@ r = 500 # Radius
 dim = 4 # Dimension
 a = 3 #Anzahl der drehebenen
 Daten = [] #da werden die Daten gespeichert
+Winkel_Daten = []
 
 Raum_anfang = raum([(0,0,0,1)])
 print(Raum_anfang.normal)
@@ -319,10 +325,17 @@ if raumdrehung:
         zeit = time.time()
         print("still running" , w)
         Normal = [Raum_anfang.normal]
+        Winkel_Neu = []
 
         for i in range(a):
-            neu = (Raum_anfang.rotation(w, [Ebenen_Matrix[i],Ebenen_Matrix[(i+1)%3]])).reshape(1,4).tolist()
+            if i != 2:
+                neu = (Raum_anfang.rotation(w, [Ebenen_Matrix[i],Ebenen_Matrix[(i+1)%3]])).reshape(1,4).tolist()
+
+            else: neu = (Raum_anfang.rotation(-w, [Ebenen_Matrix[i],Ebenen_Matrix[(i+1)%3]])).reshape(1,4).tolist()
+            neuer_winkel = winkel(np.array(Raum_anfang.normal) , np.array(neu))
+
             Normal.append(neu)
+            Winkel_Neu.append(neuer_winkel)
 
         Daten.append(bereich_test(punkte, Normal))
         print(time.time()-zeit)
