@@ -23,6 +23,7 @@ def orthonormalisierung(ebene, dim=4):
     return M.reshape(len(ebene),dim) # Ausgabe als (Zeilen-)Vektor 
 
 # nimmt 2 Vektoren (aus R4) und gibt eine dazu orthogonale (rechtwinklige) Ebene aus
+#durch orthogonal_raum eigentlich überflüssig geworden
 def orthogonal_ebene(ebene, dim = 4):
     v1 = np.array(ebene[0],dtype=float).reshape(dim,1) # (Spalten-)Vektoren aus Liste
     
@@ -84,6 +85,52 @@ def orthogonal_ebene(ebene, dim = 4):
 
     return  orthonormalisierung(V,dim)[2:dim,:] #gibt die neuen Vektoren aus, die jetzt auch orthogonal zu dem rest sind
 
+# wie orthogonale Ebene, nur für alle dimensionen verwendbar (dim von objekt und vor ortho objekt definierbar)
+# Vektoren, zu denen etwas orthogonal sein soll, dim von raum in dem das ganze ist
+def orthogonal_raum(vektoren, dim = 4):
+    for i in range(len(vektoren)):
+        while len(vektoren[i]) < dim:
+            vektoren[i] = drei_zu_vier([vektoren[i]])
+        if len(vektoren[i]) > dim:
+            print("dimensionsfehler ")
+            return
+
+    V = [np.array(vektoren[i],dtype=float).reshape(dim,1) for i in range(len(vektoren))]
+    E = np.eye(dim) 
+    neu = []
+    B = np.eye(dim) #Einheitsmatrix -> wird Basiswechselmatrix
+
+    for j in range(len(V)): 
+        v = V[j]
+        
+        # schafft Basiswechselmatrix
+        if j!= 0:
+            for i in range(dim):
+                if neu[j-1] == i:
+                    B[i,i] = np.array([1/V[j-1][i]])[0,0] 
+                else:
+                    B[i,neu[j-1]] = -V[j-1][i] 
+
+        v = np.dot(B,v) # np.dot ist Matrixmultiplikation -> macht den Basiswechsel
+        
+
+        #sucht Einheitsvektor, der LU ist
+        for i in range(len(v)):
+            if (-10**(-4) > v[i]) or (v[i] > 10**(-4)) and all( np.full((len(neu)), i) != neu): #Falls != 0, aber halt mit rundungsfehler
+                neu += [i] 
+                break
+    #print(neu)
+    for j in range(dim):
+        print(np.full((len(neu)),j))
+        print( all(np.full((len(neu)), j) != neu))
+        if not any(np.full((len(neu)), j) == neu):
+            V += [np.array(E[j]).reshape(dim,1)] # Macht eine Basis des R^dim, die die Ebenenvektoren enthällt
+            #print(j, V)
+    #print(V)
+    V = np.array(V).reshape(dim,dim)
+    return  orthonormalisierung(V,dim)[len(vektoren):dim,:]              
+
+
 
 # Ebene in der gedreht wird
 def rotation(winkel,ebene,ecken):
@@ -137,10 +184,12 @@ def spiegelung(normal, punkte):
 
 # 3-dim zu 4-dim Vektoren durch hinten 0 hinzufügen
 def drei_zu_vier(punkte):
+    l = len(punkte[0])
+    print(punkte)
     punkte = np.array(punkte).tolist()
     for i in range(len(punkte)):
         punkte[i] = list(punkte[i]) + [0]
-    return punkte    
+    return np.array(punkte).reshape(l+1)    
 
 # 4-dim zu 3-dim vektoren durch hinten ein entfernen
 def vier_zu_drei(punkte):
@@ -206,7 +255,7 @@ class raum():
     # Ebene durch 2 vektoren angeben, Winkel um den gedreht wird (winkel)
     def rotation(self,winkel,ebene):
         E = orthonormalisierung(ebene) 
-        E = orthogonal_ebene(E)
+        E = orthogonal_raum(E,4)
         
         epsilon = rotation(winkel,E,self.normal).reshape(1,4)
         return epsilon
@@ -223,7 +272,7 @@ class koerper():
     
     # Ebene, die fest beleibt    
     def rotation(self, winkel, ebene):
-        E = orthogonal_ebene(orthonormalisierung(ebene))
+        E = orthogonal_raum(orthonormalisierung(ebene),4)
         return rotation(winkel, E, self.ecken)
     
     pass
@@ -303,7 +352,7 @@ if körper_drehung:
 
 
 ### --- Variablen --- ###
-raumdrehung =True
+raumdrehung =False
 
 anzahl_punkte = 1_000_000 
 anzahl_winkel = 100 
@@ -315,7 +364,7 @@ Daten = [] #da werden die Daten gespeichert
 Winkel_Daten = []
 
 Raum_anfang = raum([(0,0,0,1)])
-print(Raum_anfang.normal)
+#print(Raum_anfang.normal)
 Ebenen_Matrix = np.array([[(1, 0, 0, 0), (0.5, sqrt(3)/2, 0, 0) , (0.5, sqrt(3)/6, sqrt(2/3), 0)]]).reshape(a,dim)
 
 randomm = True
@@ -385,3 +434,6 @@ if raumdrehung:
     print(Daten) #das kann gut in ein Dokument geschrieben werden 
     # Bezeichungsformat "name von Programm, dass die Daten erstellt hat"_"Datum, sodass es eindeutig ist, also mit Minuten und sekunden oder so"
     #alternativ Datum nur bis tag und ne automatische durchnummerierung
+
+print(orthogonal_raum([[1,0,0,3],[5,9,27,15]],4))
+print(orthogonal_ebene([[1,0,0,3],[5,9,27,15]],4))
