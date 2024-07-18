@@ -10,95 +10,31 @@ import time
 def orthonormalisierung(ebene, dim=4):
     M = np.array(ebene, dtype=np.float64).reshape(len(ebene),dim)    # macht aus der liste der 2 vekotren nen array (Datentyp für Matrixen / Tensoren/ Vektoren)
     M[0] = M[0] / sqrt(np.dot(M[0],M[0])) # Vektor durch Länge => länge 1
-
-    # Gram- Schmidt verfahren zum orthogonalisieren    
-    for k in range(1,len(ebene)): 
-        summ =0
-        for j in range(0,k):
-            summ += np.dot(M[j].T,M[k])* M[j] 
-
-        M[k] = M[k] - summ
+    # Gram- Schmidt verfahren zum orthogonalisieren  
+    anzahl=len(ebene)  
+    k=1
+    while k<anzahl: 
+        M[k] = M[k] - sum([M[j]@M[k]*M[j] for j in range(k)])
+        if(np.dot(M[k],M[k])<1e-10):
+            anzahl-=1
+            for i in range(k,anzahl):
+                M[k]=M[k+1]
+            continue
         M[k] = M[k] / sqrt(np.dot(M[k],M[k]))
-     
-    return M.reshape(len(ebene),dim) # Ausgabe als (Zeilen-)Vektor 
-
-# nimmt 2 Vektoren (aus R4) und gibt eine dazu orthogonale (rechtwinklige) Ebene aus
-#durch orthogonal_raum eigentlich überflüssig geworden
-def orthogonal_ebene(ebene, dim = 4):
-    v1 = np.array(ebene[0],dtype=float).reshape(dim,1) # (Spalten-)Vektoren aus Liste
-    
-    V = [ebene[0], ebene[1]]
-    E= np.eye(dim) # Einheitsmatrix [(1,0,0,0),(0,1,0,0),(0,0,1,0),(0,0,0,1)]
-    neu = 0
-
-    #sucht Einheitsvektor, der v1 ersetzen kann
-    for i in range(len(v1)):
-        if (-10**(-4) > v1[i]) or (v1[i] > 10**(-4)) : #Falls != 0, aber halt mit rundungsfehler
-            neu = i 
-            """for j in range(4):
-                if j !=i:
-                    V += [E[j]]"""
-            #print(V)
-            break # ich brauche V gar nicht
-
-    # Basiswechselmatrix (multiplikation mit Vektor gibt an, wie oft jeder Basisvektor für den Vektor gebraucht wird) 
-    if dim == 4:
-        v2 = np.array(ebene[1],dtype=float).reshape(dim,1)
-        B = np.eye(dim) #Einheitsmatrix -> wird Basiswechselmatrix
-
-        for i in range(dim):
-            if neu == i:
-                B[i,i] = np.array([1/v1[i]])[0,0] 
-            else:
-                B[i,neu] = -v1[i] 
-
-        v2 = np.dot(B,v2) # np.dot ist Matrixmultiplikation -> macht den Basiswechsel
-        #neu2 = 0
-        for i in range(0,4):
-            if ((-10**(-4) > v2[i]) or (v2[i] > 10**(-4))) and i != neu : # um zu gucken, welcher Vektor der Einheitsmatrix linear unabhängig von den  der Ebene ist
-                #neu2 = i
-                for j in range(4):
-                    if j != i and j != neu:
-                        V += [E[j]] # Macht eine Basis der R4, die die Ebenenvektoren enthällt
-                break
-    elif dim == 3:
-        for j in range(dim):
-            if all(np.array([j,j,j]) != neu):
-                V += [E[j].tolist()]
-
-    V = np.array(V).reshape(dim,dim)
-    V = orthonormalisierung(V,dim)
-
-    # fehlersuche
-    for i in range(len(V)):
-        for i in range(len(V)):
-            if i != j and not np.allclose(V[i]@V[j], 0):
-                print("FEEEHHHLLEEEER in der Ebene")
-            if i==j and not np.allclose(V[i]@V[j], 1):
-                print("FEEEHLER ebene nicht normal")
-
-    #fehlersuche
-    E = orthonormalisierung(ebene)
-    for i in range(2):
-        if any( E[i] != V[i]):
-            print("FEEEHLER ebene verschoben")            
-
-    return  orthonormalisierung(V,dim)[2:dim,:] #gibt die neuen Vektoren aus, die jetzt auch orthogonal zu dem rest sind
+        k+=1
+    return M[:anzahl] # Ausgabe als (Zeilen-)Vektor 
 
 # wie orthogonale Ebene, nur für alle dimensionen verwendbar (dim von objekt und vor ortho objekt definierbar)
 # Vektoren, zu denen etwas orthogonal sein soll, dim von raum in dem das ganze ist
 def orthogonal_raum(vektoren, dim:int = 4):
-    k=len(vektoren)
     ortho_mat=orthonormalisierung(vektoren)
-    vektoren=[ortho_mat[i] for i in range(k)]
-    for i in range(dim):
-        new=np.eye(dim)[i]
-        new-=sum([np.dot(new,x)*x for x in vektoren])
-        if abs(np.dot(new,new))<1e-10:
-            continue
-        vektoren.append(new/sqrt(np.dot(new,new)))
-    return np.array(vektoren[k:])
+    k=ortho_mat.shape[0]
+    return orthonormalisierung(np.concatenate((ortho_mat,np.eye(dim))))[k:]
 
+def orthogonal_ebene(vektoren,dim:int=4):
+    assert(len(vektoren)+2==dim)
+    return orthogonal_raum(vektoren,dim)
+    
 # Ebene in der gedreht wird
 def rotation(winkel,ebene,ecken):
         #print(winkel, ebene, ecken)
@@ -403,4 +339,4 @@ if raumdrehung:
     #alternativ Datum nur bis tag und ne automatische durchnummerierung
 
 print(orthogonal_raum([[1,0,0,3],[5,9,27,15]],4))
-print(orthogonal_ebene([[1,0,0,3],[5,9,27,15]],4))
+#print(orthogonal_ebene([[1,0,0,3],[5,9,27,15]],4))
