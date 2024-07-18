@@ -1,31 +1,28 @@
-
 from math import *
 import random 
 import numpy as np
 #from matplotlib import pyplot as plt
 import time
 
-# nimmt ein paar Vektoren und macht sie orthogonal (rechtwinklig) und normal (länge 1)
-# Dimension kann angegeben werden, default 4
-def orthonormalisierung(ebene, dim=4):
-    M = np.array(ebene, dtype=np.float64).reshape(len(ebene),dim)    # macht aus der liste der 2 vekotren nen array (Datentyp für Matrixen / Tensoren/ Vektoren)
-    M[0] = M[0] / sqrt(np.dot(M[0],M[0])) # Vektor durch Länge => länge 1
-    # Gram- Schmidt verfahren zum orthogonalisieren  
-    anzahl=len(ebene)  
-    k=1
+#nimmt eine Liste von Zeilenvektoren, gibt eine Orthonormalbasis des Spanns der
+#Vektoren durch Gram-Schmidt (als Zeilenvektoren einer Matrix)
+def orthonormalisierung(vektoren):
+    M = np.array(vektoren, dtype=np.float64)
+    anzahl=len(vektoren)  
+    k=0
     while k<anzahl: 
         M[k] = M[k] - sum([M[j]@M[k]*M[j] for j in range(k)])
-        if(np.dot(M[k],M[k])<1e-10):
+        if(np.linalg.norm(M[k])<1e-10):
             anzahl-=1
             for i in range(k,anzahl):
-                M[k]=M[k+1]
+                M[i]=M[i+1]
             continue
-        M[k] = M[k] / sqrt(np.dot(M[k],M[k]))
+        M[k] = M[k] / np.linalg.norm(M[k])
         k+=1
-    return M[:anzahl] # Ausgabe als (Zeilen-)Vektor 
+    return M[:anzahl]
 
-# wie orthogonale Ebene, nur für alle dimensionen verwendbar (dim von objekt und vor ortho objekt definierbar)
-# Vektoren, zu denen etwas orthogonal sein soll, dim von raum in dem das ganze ist
+#nimmt eine Liste von Vektoren, gibt eine Orthonormalbasis des zum Spann der 
+#Vektoren orthogonalen Raums (als Zeilenvektoren einer Matrix)
 def orthogonal_raum(vektoren, dim:int = 4):
     ortho_mat=orthonormalisierung(vektoren)
     k=ortho_mat.shape[0]
@@ -35,7 +32,6 @@ def orthogonal_ebene(vektoren,dim:int=4):
     assert(len(vektoren)+2==dim)
     return orthogonal_raum(vektoren,dim)
     
-# Ebene in der gedreht wird
 def rotation(winkel,ebene,ecken):
         #print(winkel, ebene, ecken)
         # Aus Ebenen-Vektoren Orthonormale Vektoren machen
@@ -78,72 +74,31 @@ def rotation(winkel,ebene,ecken):
                     
         return np.dot(R,ecken.T).T  # Ecken mal Rot. Matrix -> neue Ecken ausgegeben
 
-# Spiegelung von den Punkten (punkte) entlang einer Ebene, dessen NOrmalenvektor angegeben ist (normal) [glaube ich]
-def spiegelung(normal, punkte):
-    punkte = np.array(punkte).reshape(len(punkte),len(punkte[0])).T
-    normal = np.array(normal).reshape(len(normal),1)
-    H = np.eye(len(normal)) - 2 / np.dot(normal.T,normal) * np.dot(normal, normal.T)
-    return np.dot(H,punkte).T
+def spiegelung(normale, punkte):
+    normale/=np.linalg.norm(normale)
+    return np.array([punkt-2*normale*normale@punkt for punkt in punkte])
 
-# 3-dim zu 4-dim Vektoren durch hinten 0 hinzufügen
 def drei_zu_vier(punkte):
-    l = len(punkte[0])
-    print(punkte)
-    punkte = np.array(punkte).tolist()
-    for i in range(len(punkte)):
-        punkte[i] = list(punkte[i]) + [0]
-    return np.array(punkte).reshape(l+1)    
+    return np.concatenate((np.array(punkte),np.zeros(len(punkte),1)),axis=1)
 
-# 4-dim zu 3-dim vektoren durch hinten ein entfernen
 def vier_zu_drei(punkte):
-    for i in range(len(punkte)):
-        punkte[i] = list(punkte[i])[0:len(punkte[i]-1)]
-    return punkte    
+    return np.array(punkte)[:,:3]
 
-# testet in welchem Bereich zwischen den Ebenen, die zu den Normalenvektoren gehören, die Punkte liegen und gibt Liste mit anzahl der Pnkten in jedem Bereich an
-# wäre super, wenn dass für meherere Dimensionen funktionieren würde, nicht nur 4
-def bereich_test(punkte, normalenvektoren):
-    Bereiche = []
-    D_vergl = [] #wird Liste der Breichsnamen im binärformat, um dann mit den Punkten verglichen werden zu können
-    n = len(normalenvektoren) # Anzahl Ebene
-
-    # für jeden Bereich, erstellt bereichsnamen in D_vergl
-    for i in range(2**len(normalenvektoren)):
-        Bereiche += [0]
-        a = i
-        D_vergl += [[]]
-
-        for j in range(n):
-            if a% 2 == 1:
-                D_vergl[i] += [1]
-                a = a - 1
-            else: 
-                D_vergl[i] += [0]
-            a = a/2
-        D_vergl[i] = list(reversed(D_vergl[i]))
-
-    d = [-1 for i in range(n)] #wird zu den richtungsangaben für die Punkte (links bzw rechts von den Ebenen --> -1 bzw +1)
-    
-    # bestimmt Ort für jeden punkt
-    for p in punkte:
-        for i in range(n):
-            #Skalarprodukt < 0 ==> auf der einen Seite 
-            if not np.dot(p,np.array(Normal[i]).reshape(4,1)) < 0:
-                d[i] = 1 
-            # Skalarprodukt >= 0 ==> auf der anderen Seite
-            else: d[i] = 0    
-        
-        # ordnet Punkt einem Bereich zu und zählt ihn
-        for b in range(len(D_vergl)):
-            if d == D_vergl[b]:
-                Bereiche[b] += 1    
-    return Bereiche
+#gibt die Orientierungen der Punkte zu den Ebenen als Dictionary zurück
+def bereich_test(punkte, normalen):
+    bereiche = {}
+    for punkt in punkte:
+        bereich=[0 if punkt@normale<0 else 1 for normale in normalen]
+        if bereich in bereiche:
+            bereiche[bereich]+=1
+        bereiche[bereich]=1
+    return bereiche
 
 #berechnet Winkel zwischen 2 vektoren
 def winkel(vektor1, vektor2):
-    vektor1 = vektor1 / sqrt(vektor1@vektor1)
-    vektor2 = vektor2 / sqrt(vektor2@vektor2)
-    return acos(np.dot(vektor1, vektor2.T))
+    vektor1 = vektor1 / np.linalg.norm(vektor1)
+    vektor2 = vektor2 / np.linalg.norm(vektor2)
+    return acos(vektor1@vektor2)
 
 # Raum ist durch Normalenvektor bestimmt. Also immer 1 dim weniger als der Raum, in dem er definiert ist
 # also in dem Fall immer 3d räume im 4d raum. wäre super, wenn 4d zu allgmeiner Dimension n geändert werden könnte
