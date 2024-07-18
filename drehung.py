@@ -87,50 +87,17 @@ def orthogonal_ebene(ebene, dim = 4):
 
 # wie orthogonale Ebene, nur für alle dimensionen verwendbar (dim von objekt und vor ortho objekt definierbar)
 # Vektoren, zu denen etwas orthogonal sein soll, dim von raum in dem das ganze ist
-def orthogonal_raum(vektoren, dim = 4):
-    for i in range(len(vektoren)):
-        while len(vektoren[i]) < dim:
-            vektoren[i] = drei_zu_vier([vektoren[i]])
-        if len(vektoren[i]) > dim:
-            print("dimensionsfehler ")
-            return
-
-    V = [np.array(vektoren[i],dtype=float).reshape(dim,1) for i in range(len(vektoren))]
-    E = np.eye(dim) 
-    neu = []
-    B = np.eye(dim) #Einheitsmatrix -> wird Basiswechselmatrix
-
-    for j in range(len(V)): 
-        v = V[j]
-        
-        # schafft Basiswechselmatrix
-        if j!= 0:
-            for i in range(dim):
-                if neu[j-1] == i:
-                    B[i,i] = np.array([1/V[j-1][i]])[0,0] 
-                else:
-                    B[i,neu[j-1]] = -V[j-1][i] 
-
-        v = np.dot(B,v) # np.dot ist Matrixmultiplikation -> macht den Basiswechsel
-        
-
-        #sucht Einheitsvektor, der LU ist
-        for i in range(len(v)):
-            if (-10**(-4) > v[i]) or (v[i] > 10**(-4)) and all( np.full((len(neu)), i) != neu): #Falls != 0, aber halt mit rundungsfehler
-                neu += [i] 
-                break
-    #print(neu)
-    for j in range(dim):
-        print(np.full((len(neu)),j))
-        print( all(np.full((len(neu)), j) != neu))
-        if not any(np.full((len(neu)), j) == neu):
-            V += [np.array(E[j]).reshape(dim,1)] # Macht eine Basis des R^dim, die die Ebenenvektoren enthällt
-            #print(j, V)
-    #print(V)
-    V = np.array(V).reshape(dim,dim)
-    return  orthonormalisierung(V,dim)[len(vektoren):dim,:]              
-
-
+def orthogonal_raum(vektoren, dim:int = 4):
+    k=len(vektoren)
+    ortho_mat=orthonormalisierung(vektoren)
+    vektoren=[ortho_mat[i] for i in range(k)]
+    for i in range(dim):
+        new=np.eye(dim)[i]
+        new-=sum([np.dot(new,x)*x for x in vektoren])
+        if abs(np.dot(new,new))<1e-10:
+            continue
+        vektoren.append(new/sqrt(np.dot(new,new)))
+    return np.array(vektoren[k:])
 
 # Ebene in der gedreht wird
 def rotation(winkel,ebene,ecken):
