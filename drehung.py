@@ -6,73 +6,50 @@ import time
 
 #nimmt eine Liste von Zeilenvektoren, gibt eine Orthonormalbasis des Spanns der
 #Vektoren durch Gram-Schmidt (als Zeilenvektoren einer Matrix)
-def orthonormalisierung(vektoren):
+def orthonormalisierung(vektoren) -> np.ndarray:
     M = np.array(vektoren, dtype=np.float64)
-    anzahl=len(vektoren)  
-    k=0
+    anzahl = len(vektoren)  
+    k = 0
     while k<anzahl: 
-        M[k] = M[k] - sum([M[j]@M[k]*M[j] for j in range(k)])
-        if(np.linalg.norm(M[k])<1e-10):
-            anzahl-=1
+        M[k] = M[k] - sum([M[j]@M[k] * M[j] for j in range(k)])
+        if(np.linalg.norm(M[k]) < 1e-10):
+            anzahl -= 1
             for i in range(k,anzahl):
                 M[i]=M[i+1]
             continue
         M[k] = M[k] / np.linalg.norm(M[k])
-        k+=1
+        k += 1
     return M[:anzahl]
 
 #nimmt eine Liste von Vektoren, gibt eine Orthonormalbasis des zum Spann der 
 #Vektoren orthogonalen Raums (als Zeilenvektoren einer Matrix)
-def orthogonal_raum(vektoren, dim:int = 4):
-    ortho_mat=orthonormalisierung(vektoren)
-    k=ortho_mat.shape[0]
+def orthogonal_raum(vektoren, dim:int = 4) -> np.ndarray:
+    ortho_mat = orthonormalisierung(vektoren)
+    k = ortho_mat.shape[0]
     return orthonormalisierung(np.concatenate((ortho_mat,np.eye(dim))))[k:]
 
-def orthogonal_ebene(vektoren,dim:int=4):
-    assert(len(vektoren)+2==dim)
+def orthogonal_ebene(vektoren,dim:int=4) -> np.ndarray:
+    assert(len(vektoren)+2 == dim)
     return orthogonal_raum(vektoren,dim)
-    
-def rotation(winkel,ebene,ecken):
-        #print(winkel, ebene, ecken)
-        # Aus Ebenen-Vektoren Orthonormale Vektoren machen
-        vektoren = orthonormalisierung(ebene)
 
-        if np.dot(vektoren[0], vektoren[1].T) !=0  :
-            print("FEHLER Ebene falsch bei rotation" , 1)
+#Gibt Matrix zurück, die eine Rotation um den Winkel in der aus den ersten bei-
+#den Basisvektoren gebildeten Ebene beschreibt
+def rot_matrix(winkel:float,basis:np.ndarray=np.eye(4)) -> np.ndarray:
+    dim = len(basis)
+    assert(dim >= 2)
+    mat2d = np.array([[np.cos(winkel),np.sin(winkel)],
+                    [-np.sin(winkel),np.cos(winkel)]])
+    return basis@np.concatenate(
+           (np.concatenate((mat2d,np.zeros((2,dim-2))),axis=1),np.eye(dim)[2:])
+           )@np.linalg.inv(basis)
 
-        if not np.allclose(vektoren[0]@ vektoren[0].T , 1) or not np.allclose(np.dot(vektoren[1], vektoren[1].T), 1):   
-            print("FEHLER Ebene falsch bei rotation" , 2)   
-            vektoren[0] = vektoren[0] /sqrt(np.dot(vektoren[0], vektoren[0].T))
-            vektoren[1] = vektoren[1] /sqrt(np.dot(vektoren[1], vektoren[1].T))
-
-        if not np.allclose(np.dot(vektoren[0], vektoren[0].T), 1): 
-            print("dir ist nicht mehr zu helfen!!! 1")    
-            print(vektoren[0])
-
-        if not np.allclose(np.dot(vektoren[1], vektoren[1].T), 1):    
-            print("dir ist nicht mehr zu helfen!!! 2") 
-            print(vektoren[1])
-
-        g1 = vektoren[0].reshape(4,1)
-        g2 = vektoren[1].reshape(4,1)
-
-        # Aus zwei Orthonormalen Vektoren die Rotationsmatrix erstellen
-        V = np.dot(g1,g1.T) + np.dot(g2,g2.T)
-        W = np.dot(g1,g2.T) - np.dot(g2,g1.T)
-        I = np.eye(4)
-        R = I + (cos(winkel)-1)*V + sin(winkel)*W #Rotationsmatrix
-
-        #Basiswechselmatrix
-        #B = np.array(vektoren.tolist() + orthogonal_ebene(vektoren).tolist()).reshape(4,4)
-        
-        #Rot = np.array([[cos(winkel),-sin(winkel),0,0],[sin(winkel),cos(winkel), 0,0],[0,0,1,0],[0,0,0,1]])
-
-        #R = B * Rot * B.T
-        #print(ecken)
-        ecken = np.array(ecken).reshape(len(ecken),4)
-        # (np.exp( winkel * (np.dot(g1.T, ecken.T) * g2 - np.dot(g2.T, ecken.T)* g1) )).T # np.dot(R,ecken.T).T
-                    
-        return np.dot(R,ecken.T).T  # Ecken mal Rot. Matrix -> neue Ecken ausgegeben
+def rotation(winkel:float,ebene,ecken) -> np.ndarray:
+    assert(len(ebene[0]) == 4 and len(ecken[0]) == 4)
+    vektoren = orthonormalisierung(ebene)
+    assert(len(vektoren) == 2)
+    basis = np.concatenate(vektoren,orthogonal_raum(vektoren))
+    R = rot_matrix(winkel,basis)
+    return ecken@R.T
 
 def spiegelung(normale, punkte):
     normale/=np.linalg.norm(normale)
@@ -293,5 +270,6 @@ if raumdrehung:
     # Bezeichungsformat "name von Programm, dass die Daten erstellt hat"_"Datum, sodass es eindeutig ist, also mit Minuten und sekunden oder so"
     #alternativ Datum nur bis tag und ne automatische durchnummerierung
 
-print(orthogonal_raum([[1,0,0,3],[5,9,27,15]],4))
+#print(orthogonal_raum([[1,0,0,3],[5,9,27,15]],4))
 #print(orthogonal_ebene([[1,0,0,3],[5,9,27,15]],4))
+print(rot_matrix(0))
