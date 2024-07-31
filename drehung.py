@@ -1,5 +1,5 @@
 from math import *
-import random 
+import random
 import numpy as np
 #from matplotlib import pyplot as plt
 import time
@@ -8,9 +8,9 @@ import time
 #Vektoren durch Gram-Schmidt (als Zeilenvektoren einer Matrix)
 def orthonormalisierung(vektoren) -> np.ndarray:
     M = np.array(vektoren, dtype=np.float64)
-    anzahl = len(vektoren)  
+    anzahl = len(vektoren)
     k = 0
-    while k<anzahl: 
+    while k<anzahl:
         M[k] = M[k] - sum([M[j]@M[k] * M[j] for j in range(k)])
         if(np.linalg.norm(M[k]) < 1e-10):
             anzahl -= 1
@@ -21,7 +21,7 @@ def orthonormalisierung(vektoren) -> np.ndarray:
         k += 1
     return M[:anzahl]
 
-#nimmt eine Liste von Vektoren, gibt eine Orthonormalbasis des zum Spann der 
+#nimmt eine Liste von Vektoren, gibt eine Orthonormalbasis des zum Spann der
 #Vektoren orthogonalen Raums (als Zeilenvektoren einer Matrix)
 def orthogonal_raum(vektoren, dim:int = 4) -> np.ndarray:
     ortho_mat = orthonormalisierung(vektoren)
@@ -56,7 +56,7 @@ def spiegelung(normale, punkte):
     return np.array([punkt-2*normale*normale@punkt for punkt in punkte])
 
 def drei_zu_vier(punkte):
-    return np.concatenate((np.array(punkte),np.zeros(len(punkte),1)),axis=1)
+    return np.concatenate((np.array(punkte),np.zeros((len(punkte),1))),axis=1)
 
 def vier_zu_drei(punkte):
     return np.array(punkte)[:,:3]
@@ -80,18 +80,18 @@ def winkel(vektor1, vektor2):
 # Raum ist durch Normalenvektor bestimmt. Also immer 1 dim weniger als der Raum, in dem er definiert ist
 # also in dem Fall immer 3d räume im 4d raum. wäre super, wenn 4d zu allgmeiner Dimension n geändert werden könnte
 class raum():
-    
+
     #def durch Vekotr der im rechten Winkel dadrauf steht (normalenvektor)
     def __init__(self, normalenvektor) -> None:
         self.normal = normalenvektor
         pass
 
-    # Ebene, die fest bleibt (bei 4d rotation bleibt immer eine 2d Ebene unverändert und in einer dazu rechtwinkligen wird gedreht)  
+    # Ebene, die fest bleibt (bei 4d rotation bleibt immer eine 2d Ebene unverändert und in einer dazu rechtwinkligen wird gedreht)
     # Ebene durch 2 vektoren angeben, Winkel um den gedreht wird (winkel)
     def rotation(self,winkel,ebene):
-        E = orthonormalisierung(ebene) 
+        E = orthonormalisierung(ebene)
         E = orthogonal_raum(E,4)
-        
+
         epsilon = rotation(winkel,E,self.normal).reshape(1,4)
         return epsilon
 
@@ -104,12 +104,12 @@ class koerper():
     def __init__(self, ecken) -> None:
         self.ecken = ecken
         pass
-    
-    # Ebene, die fest beleibt    
+
+    # Ebene, die fest beleibt
     def rotation(self, winkel, ebene):
         E = orthogonal_raum(orthonormalisierung(ebene),4)
         return rotation(winkel, E, self.ecken)
-    
+
     pass
 
 körper_drehung = False ## körper_drehung macht das Winkel finden
@@ -125,7 +125,7 @@ if körper_drehung:
 
     # hier stehen ausgeklammert die ganzen Körper, die ich so bruache. wäre super, wenn die in einer Variablen (dictionary) wären und mann sich aussuchen kann, was man hier dann abruft
     # Körper, der nicht gedreht wird
-    dreid_korper = [(1,0,0),(0,1,0),(0,0,1)]  #[(1, 0, 0), (0.5, sqrt(3)/2, 0) , (0.5, sqrt(3)/6, sqrt(2/3))] #  [(a,b,c), (b,c,a), (c,a,b)]  # [(1,0,0),(0,1,0),(0,0,1)] 
+    dreid_korper = [(1,0,0),(0,1,0),(0,0,1)]  #[(1, 0, 0), (0.5, sqrt(3)/2, 0) , (0.5, sqrt(3)/6, sqrt(2/3))] #  [(a,b,c), (b,c,a), (c,a,b)]  # [(1,0,0),(0,1,0),(0,0,1)]
 
     #fester_korper = koerper(drei_zu_vier(dreid_korper))
 
@@ -137,7 +137,7 @@ if körper_drehung:
         langer = drei_zu_vier(gespiegelt)
         alle_korper.append(koerper([langer]))
 
-        
+
     for i in alle_korper:
         print("-------------" , i.ecken)
 
@@ -146,8 +146,8 @@ if körper_drehung:
 
     Winkel = np.linspace( 0,pi,1001) # winkel, die ausprobiert werden, wäre super, wenn man das durch Variablen irgenwo eingeben könnte
     distanz = [100 for i in range(3) ] # variable, in die dann der Abstand zwischen den Ecken geschrieben wird
-    wirkliche_distanz = [100 for i in range(3)] #irgendwas, weil dinge nicht funktioniert haben 
-    wirklicher_winkel = [10 for i in range(3)] 
+    wirkliche_distanz = [100 for i in range(3)] #irgendwas, weil dinge nicht funktioniert haben
+    wirklicher_winkel = [10 for i in range(3)]
     kl_winkel = [10 for i in range(3) ]
 
 
@@ -158,10 +158,10 @@ if körper_drehung:
         for i in range(2):
             gedrehter_korper.append(alle_korper[i].rotation(w,[fester_korper.ecken[(i+2)%3],fester_korper.ecken[(i+1)%3]]))
         gedrehter_korper.append(alle_korper[2].rotation(-w,[fester_korper.ecken[(2+2)%3],fester_korper.ecken[(2+1)%3]]))
-            
+
         """for i in range(3):
-            print("gedereht ", i , gedrehter_korper[i])  """  
-        
+            print("gedereht ", i , gedrehter_korper[i])  """
+
         # spruckt richtigen Winkel aus, wenn er getrofen wird
         if np.allclose(gedrehter_korper[0], gedrehter_korper[1]):
             print (w , "hier!!!!")
@@ -174,7 +174,7 @@ if körper_drehung:
             if b < distanz[i]:
                 distanz[i] = b
                 kl_winkel[i] = w
-            
+
             a = (gedrehter_korper[i] - gedrehter_korper[(i+1)%3])@(gedrehter_korper[i] - gedrehter_korper[(i+1)%3]).T
             if  a < wirkliche_distanz[i]:
                 wirkliche_distanz[i] = a
@@ -189,8 +189,8 @@ if körper_drehung:
 ### --- Variablen --- ###
 raumdrehung =False
 
-anzahl_punkte = 1_000_000 
-anzahl_winkel = 100 
+anzahl_punkte = 1_000_000
+anzahl_winkel = 100
 Winkel = [1.82347889] #np.linspace(0,2*pi,anzahl_winkel) #Winkel um den/die gedreht wird
 r = 500 # Radius für regelmäßige Anordnung
 dim = 4 # Dimension
@@ -226,14 +226,14 @@ if raumdrehung:
                         p = np.array([i/r,j/r,k/r,l/r]).reshape(1,4)
                         if np.dot(p,p.T) <= 1:
                             punkte += [p]
-        print(time.time()-zeit)             
+        print(time.time()-zeit)
         print(len(punkte))
 
     # random anordnung der Punkte (bruacht super viel Zeit, dass muss sehr viel schneller werden)
     if randomm:
         while punkte_zaehler < anzahl_punkte:
             p = np.array([[random.randint(-r,r)/r for i in range(4)]]).reshape(1,4)
-            
+
             if np.dot(p,p.T) <= 1: #wenn in Späre
                 punkte_zaehler += 1
                 punkte += [p]
@@ -264,9 +264,9 @@ if raumdrehung:
     #with open('el_20240106_07.txt', "a") as speicher:
      #   print(punkte_zaehler, "; \n", np.array(Daten).reshape(len(Winkel),16).tolist(), " \n ;", Winkel,  "\n \n", file=speicher)
 
-    print(time.time()- anfangs_zeit)    
+    print(time.time()- anfangs_zeit)
     print("fretig")
-    print(Daten) #das kann gut in ein Dokument geschrieben werden 
+    print(Daten) #das kann gut in ein Dokument geschrieben werden
     # Bezeichungsformat "name von Programm, dass die Daten erstellt hat"_"Datum, sodass es eindeutig ist, also mit Minuten und sekunden oder so"
     #alternativ Datum nur bis tag und ne automatische durchnummerierung
 
