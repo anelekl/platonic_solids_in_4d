@@ -10,15 +10,18 @@ def kegel_verhältnis(dim,sample_size,winkel):
 
 for dim in range(4,5):
     #Öffnungswnkel des Kegels
-    winkel_liste = np.linspace(0,pi,200)
+    winkel_liste = [0.5003842446] #np.linspace(0,pi/2,100)
     verhältniss = []
 
     r = 10_000
-    anzahl_punkte = 100_000
+    anzahl_punkte = 1_000_000
     punkte_zaehler = 0
     punkte = []
     
     for winkel in winkel_liste:
+        punkte_zaehler = 0
+        punkte = []
+    
         innen = 0
         aussen = 0
         
@@ -41,8 +44,8 @@ for dim in range(4,5):
                 innen += 1
                 #print("i")
 
-        verhältniss += [innen/anzahl_punkte]
-
+        verhältniss += [innen/anzahl_punkte/2]
+        print(innen/anzahl_punkte/2)
         if innen + aussen != anzahl_punkte:
              print("Verkackt", aussen, innen)
         #print(winkel , "; " , innen/anzahl_punkte)
@@ -61,7 +64,7 @@ plt.show()
 winkel_raumwinkel = dict(zip(winkel_liste, verhältniss))
 
 def save_dict_to_file(dic):
-    f = open('saved_winkel_raumwinkel_02.txt','w')
+    f = open('saved_winkel_raumwinkel_03.txt','w')
     f.write(str(dic))
     f.close()
 
@@ -71,4 +74,4 @@ def load_dict_from_file():
     f.close()
     return eval(data)
 
-save_dict_to_file(winkel_raumwinkel)
+#save_dict_to_file(winkel_raumwinkel)
