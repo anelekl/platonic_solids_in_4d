@@ -43,17 +43,22 @@ def rot_matrix(winkel:float,basis:np.ndarray=np.eye(4)) -> np.ndarray:
            (np.concatenate((mat2d,np.zeros((2,dim-2))),axis=1),np.eye(dim)[2:])
            )@np.linalg.inv(basis)
 
-def rotation(winkel:float,ebene,ecken) -> np.ndarray:
-    assert(len(ebene[0]) == 4 and len(ecken[0]) == 4)
+def rotation(winkel:float,ebene,ecken,offset=None) -> np.ndarray:
+    assert(len(ebene[0])==len(ecken[0]) and 
+           (offset==None or len(ebene[0])==len(offset)))
+    if offset==None:
+        offset=np.zeros((1,len(ebene[0])))
     vektoren = orthonormalisierung(ebene)
     assert(len(vektoren) == 2)
     basis = np.concatenate(vektoren,orthogonal_raum(vektoren))
     R = rot_matrix(winkel,basis)
-    return ecken@R.T
+    return offset+(ecken-offset)@R.T
 
-def spiegelung(normale, punkte):
+def spiegelung(normale, punkte,offset=None):
+    if offset==None:
+        offset=np.zeros((1,len(normale)))
     normale/=np.linalg.norm(normale)
-    return np.array([punkt-2*normale*normale@punkt for punkt in punkte])
+    return offset-normale*(punkte-offset)@normale
 
 def drei_zu_vier(punkte):
     return np.concatenate((np.array(punkte),np.zeros((len(punkte),1))),axis=1)
