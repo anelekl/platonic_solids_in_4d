@@ -123,7 +123,7 @@ class plat_solid:
         dim=len(schäfli_list)+1
         a=plat_solid(schäfli_list[:-1]).copy(dim)
         parts=[a]
-        vec_ortho=[np.eye(dim)[-1]]
+        self.vec_ortho=[np.eye(dim)[-1]]
         #winkel herausfinden (TODO)
         angle=np.pi/2
         #körper konstruieren
@@ -157,8 +157,8 @@ class plat_solid:
             points_there=to_be_added.reduce_order(dim-2,0,index_adapted)
             point_out=to_be_added.points[min([i for i in range(len(to_be_added.points)) if not i in points_there])]-points_target[0]
             mat=orthonormalisierung(np.array(points_target[1:])-points_target[0])
-            to_be_added.points=[x for x in rotation(angle,[vec_ortho[to_be_mirrored],point_out-mat.T@mat@point_out],to_be_added.points,points_target[0])]
-            vec_ortho.append(rotation(angle,[vec_ortho[to_be_mirrored],point_out-mat.T@mat@point_out],[vec_ortho[to_be_mirrored]])[0])
+            to_be_added.points=[x for x in rotation(angle,[self.vec_ortho[to_be_mirrored],point_out-mat.T@mat@point_out],to_be_added.points,points_target[0])]
+            self.vec_ortho.append(rotation(angle,[self.vec_ortho[to_be_mirrored],point_out-mat.T@mat@point_out],[self.vec_ortho[to_be_mirrored]])[0])
             index_change=[[]]
             for i in range(len(to_be_added.points)):
                 isIn=False
