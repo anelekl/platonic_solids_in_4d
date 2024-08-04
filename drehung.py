@@ -1,8 +1,9 @@
-from math import *
 import random
 import numpy as np
 #from matplotlib import pyplot as plt
 import time
+from copy import deepcopy
+import sys
 
 #nimmt eine Liste von Zeilenvektoren, gibt eine Orthonormalbasis des Spanns der
 #Vektoren durch Gram-Schmidt (als Zeilenvektoren einer Matrix)
@@ -21,47 +22,61 @@ def orthonormalisierung(vektoren) -> np.ndarray:
         k += 1
     return M[:anzahl]
 
+#Berechnet raum1\raum2(im Sinne der Mengendifferenz)
+def diff(raum1,raum2):
+    mat=orthonormalisierung(raum2)
+    k=len(mat)
+    return orthonormalisierung(np.concatenate((mat,raum1)))[k:]
+
 #nimmt eine Liste von Vektoren, gibt eine Orthonormalbasis des zum Spann der
 #Vektoren orthogonalen Raums (als Zeilenvektoren einer Matrix)
 def orthogonal_raum(vektoren, dim:int = 4) -> np.ndarray:
-    ortho_mat = orthonormalisierung(vektoren)
-    k = ortho_mat.shape[0]
-    return orthonormalisierung(np.concatenate((ortho_mat,np.eye(dim))))[k:]
+    if(len(vektoren)>0):
+        dim=len(vektoren[0])
+    return diff(np.eye(dim),vektoren)
 
 def orthogonal_ebene(vektoren,dim:int=4) -> np.ndarray:
+    if(len(vektoren)>0):
+        dim=len(vektoren[0])
     assert(len(vektoren)+2 == dim)
     return orthogonal_raum(vektoren,dim)
 
 #Gibt Matrix zurück, die eine Rotation um den Winkel in der aus den ersten bei-
-#den Basisvektoren gebildeten Ebene beschreibt
+#den Basisvektoren gebildeten Ebene beschreibt, so dass ein Winkel von 90 Grad
+#bei einer Multiplikation von links den zweiten in den ersten Basisvektor über-
+#führt.
 def rot_matrix(winkel:float,basis:np.ndarray=np.eye(4)) -> np.ndarray:
     dim = len(basis)
     assert(dim >= 2)
     mat2d = np.array([[np.cos(winkel),np.sin(winkel)],
                     [-np.sin(winkel),np.cos(winkel)]])
-    return basis@np.concatenate(
+    return basis.T@np.concatenate(
            (np.concatenate((mat2d,np.zeros((2,dim-2))),axis=1),np.eye(dim)[2:])
-           )@np.linalg.inv(basis)
+           )@basis
 
 def rotation(winkel:float,ebene,ecken,offset=None) -> np.ndarray:
-    assert(len(ebene[0])==len(ecken[0]) and 
-           (offset==None or len(ebene[0])==len(offset)))
-    if offset==None:
+    if type(offset)==type(None):
         offset=np.zeros((1,len(ebene[0])))
     vektoren = orthonormalisierung(ebene)
     assert(len(vektoren) == 2)
-    basis = np.concatenate(vektoren,orthogonal_raum(vektoren))
+    basis = np.concatenate((vektoren,orthogonal_raum(vektoren)))
     R = rot_matrix(winkel,basis)
     return offset+(ecken-offset)@R.T
 
 def spiegelung(normale, punkte,offset=None):
-    if offset==None:
+    if type(offset)==type(None):
         offset=np.zeros((1,len(normale)))
     normale/=np.linalg.norm(normale)
-    return offset-normale*(punkte-offset)@normale
+    return punkte-2*normale*(punkte-offset)@normale
+def spiegelung_gen(spiegel_raum,punkte,offset=None):
+    assert(len(punkte)>0)
+    if type(offset)==type(None):
+        offset=np.zeros((1,len(punkte[0])))
+    normal_raum=orthogonal_raum(spiegel_raum)
+    return punkte-2*(punkte-offset)@normal_raum.T@normal_raum
 
 def drei_zu_vier(punkte):
-    return np.concatenate((np.array(punkte),np.zeros((len(punkte),1))),axis=1)
+    return np.concatenate((punkte,np.zeros((len(punkte),1))),axis=1)
 
 def vier_zu_drei(punkte):
     return np.array(punkte)[:,:3]
@@ -80,7 +95,120 @@ def bereich_test(punkte, normalen):
 def winkel(vektor1, vektor2):
     vektor1 = vektor1 / np.linalg.norm(vektor1)
     vektor2 = vektor2 / np.linalg.norm(vektor2)
-    return acos(vektor1@vektor2)
+    return np.acos(vektor1@vektor2)
+
+def schnitt(raum1,raum2):
+    return orthogonal_raum(np.concatenate((raum1,raum2)).T)[:,:len(raum1)]@raum1
+class plat_solid:
+    def __init__(self,schäfli_list,higher_order=None):
+        if higher_order!=None:
+            self.points=[p for p in schäfli_list]
+            self.higher_order=higher_order
+            self.mid=sum(self.points)/len(self.points)
+            return
+        if len(schäfli_list)==1:
+            num_points=schäfli_list[0]
+            angle=2*np.pi/num_points
+            matrix_rot=np.array([[np.cos(angle),-np.sin(angle)],[np.sin(angle),
+                                                                np.cos(angle)]])
+            self.points=[np.array([0,0]),np.array([1,0])]
+            for _ in range(num_points-2):
+                self.points.append(self.points[-1]+matrix_rot@(self.points[-1]-
+                                                               self.points[-2]))
+            self.higher_order=[[{i} for i in range(num_points)],
+                               [{i,(i+1)%num_points} for i in range(num_points)],
+                               [{i for i in range(num_points)}]]
+            self.mid=sum(self.points)/len(self.points)
+            return
+        dim=len(schäfli_list)+1
+        a=plat_solid(schäfli_list[:-1]).copy(dim)
+        parts=[a]
+        vec_ortho=[np.eye(dim)[-1]]
+        #winkel herausfinden (TODO)
+        angle=np.pi/2
+        #körper konstruieren
+        self.points=a.points.copy()
+        self.higher_order=deepcopy(a.higher_order)
+        unmatched=self.get_unmatched(schäfli_list[-1])
+        while len(unmatched)>0:
+            to_be_completed=unmatched[0]
+            to_be_mirrored=adjacent=0
+            for i in range(len(self.higher_order[dim-2])):
+                if not to_be_completed in self.higher_order[dim-2][i]:
+                    continue
+                adj_adjacent=[j for j in range(len(self.higher_order[dim-1]))
+                                if i in self.higher_order[dim-1][j]]
+                if len(adj_adjacent)==0:
+                    sys.exit(1)
+                if len(adj_adjacent)==2:
+                    continue
+                adjacent=i
+                to_be_mirrored=adj_adjacent[0]
+                break
+            to_be_added=parts[to_be_mirrored].copy()
+            points_target=self.get_points(dim-2,adjacent)
+            index_adapted=0
+            for i in range(len(to_be_added.higher_order[dim-2])):
+                points=to_be_added.get_points(dim-2,i)
+                if np.linalg.norm(sum(points)-sum(points_target))<1e-5:
+                    index_adapted=i
+                    break
+            to_be_added.flip(dim-2,index_adapted)
+            points_there=to_be_added.reduce_order(dim-2,0,index_adapted)
+            point_out=to_be_added.points[min([i for i in range(len(to_be_added.points)) if not i in points_there])]-points_target[0]
+            mat=orthonormalisierung(np.array(points_target[1:])-points_target[0])
+            to_be_added.points=[x for x in rotation(angle,[vec_ortho[to_be_mirrored],point_out-mat.T@mat@point_out],to_be_added.points,points_target[0])]
+            vec_ortho.append(rotation(angle,[vec_ortho[to_be_mirrored],point_out-mat.T@mat@point_out],[vec_ortho[to_be_mirrored]])[0])
+            index_change=[[]]
+            for i in range(len(to_be_added.points)):
+                isIn=False
+                for j in range(len(self.points)):
+                    if np.linalg.norm(to_be_added.points[i]-self.points[j])>1e-5:
+                        continue
+                    index_change[0].append(j)
+                    isIn=True
+                    break
+                if isIn:
+                    continue
+                index_change[0].append(len(self.points))
+                self.points.append(to_be_added.points[i])
+                self.higher_order[0].append({index_change[0][-1]})
+                continue
+            for (i,order) in enumerate(to_be_added.higher_order):
+                if i==0:
+                    continue
+                index_change.append([])
+                for (j,obj) in enumerate(order):
+                    obj_changed={index_change[i-1][k] for k in obj}
+                    if obj_changed in self.higher_order[i]:
+                        index_change[i].append(self.higher_order[i].index(obj_changed))
+                        continue
+                    index_change[i].append(len(self.higher_order[i]))
+                    self.higher_order[i].append(obj_changed)
+            parts.append(to_be_added)
+            unmatched=self.get_unmatched(schäfli_list[-1])
+        self.higher_order.append([{i for i in range(len(self.higher_order[dim-1]))}])
+        
+    def copy(self,dim=None):
+        if dim==None:
+            dim=len(self.points[0])
+        assert(dim>=len(self.points[0]))
+        return plat_solid(np.concatenate((self.points,np.zeros((len(self.points),dim-len(self.points[0])))),axis=1),deepcopy(self.higher_order))
+    def reduce_order(self,order,orderNew,index:int):
+        objects_included={index}
+        for order_curr in range(order-1,orderNew-1,-1):
+            objects_included={i for i in range(len(self.higher_order[order_curr])) if any([i in self.higher_order[order_curr+1][j] for j in objects_included])}
+        return objects_included
+    #Gibt die Liste der Punkte zurück, welche im index-ten order-dimensionalen Teilkörper enthalten sind.
+    def get_points(self,order,index):
+        return [self.points[i] for i in self.reduce_order(order,0,index)]
+    def flip(self,order,index):
+        plane=self.get_points(order,index)
+        plane_basis=plane[1:]-plane[0]
+        self.points=[x for x in spiegelung_gen(plane_basis,self.points,plane[0])]
+    def get_unmatched(self,target):
+        dim=len(self.points[0])
+        return [x for x in range(len(self.higher_order[dim-3])) if len([1 for z in self.higher_order[dim-1] if any([x in self.higher_order[dim-2][y] for y in z])])!=target]
 
 # Raum ist durch Normalenvektor bestimmt. Also immer 1 dim weniger als der Raum, in dem er definiert ist
 # also in dem Fall immer 3d räume im 4d raum. wäre super, wenn 4d zu allgmeiner Dimension n geändert werden könnte
@@ -124,8 +252,8 @@ if körper_drehung:
 
     #3 Ecken: die erste, die "mittlere", die an der alles aufeinander trifft: NICHT MIT ANGEBEN -- weil die in 0 gesetzt wurde
     # ich glaube, die sind alle unnötig, weil sie nicht mehr gebraucht werden
-    a = - (sqrt(5)+1)/4
-    c = (1 - (sqrt(5) + 1)/2)/2
+    a = - (np.sqrt(5)+1)/4
+    c = (1 - (np.sqrt(5) + 1)/2)/2
     b = 1/2
 
     # hier stehen ausgeklammert die ganzen Körper, die ich so bruache. wäre super, wenn die in einer Variablen (dictionary) wären und mann sich aussuchen kann, was man hier dann abruft
@@ -149,7 +277,7 @@ if körper_drehung:
     fester_korper = koerper(drei_zu_vier(dreid_korper))
     print(fester_korper.ecken)
 
-    Winkel = np.linspace( 0,pi,1001) # winkel, die ausprobiert werden, wäre super, wenn man das durch Variablen irgenwo eingeben könnte
+    Winkel = np.linspace( 0,np.pi,1001) # winkel, die ausprobiert werden, wäre super, wenn man das durch Variablen irgenwo eingeben könnte
     distanz = [100 for i in range(3) ] # variable, in die dann der Abstand zwischen den Ecken geschrieben wird
     wirkliche_distanz = [100 for i in range(3)] #irgendwas, weil dinge nicht funktioniert haben
     wirklicher_winkel = [10 for i in range(3)]
@@ -205,7 +333,7 @@ Winkel_Daten = []
 
 Raum_anfang = raum([(0,0,0,1)])
 #print(Raum_anfang.normal)
-Ebenen_Matrix = np.array([[(1, 0, 0, 0), (0.5, sqrt(3)/2, 0, 0) , (0.5, sqrt(3)/6, sqrt(2/3), 0)]]).reshape(a,dim)
+Ebenen_Matrix = np.array([[(1, 0, 0, 0), (0.5, np.sqrt(3)/2, 0, 0) , (0.5, np.sqrt(3)/6, np.sqrt(2/3), 0)]]).reshape(a,dim)
 
 randomm = True
 
