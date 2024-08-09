@@ -33,6 +33,8 @@ def diff(raum1,raum2):
 def orthogonal_raum(vektoren, dim:int = 4) -> np.ndarray:
     if(len(vektoren)>0):
         dim=len(vektoren[0])
+    else:
+        return np.eye(dim)
     return diff(np.eye(dim),vektoren)
 
 def orthogonal_ebene(vektoren,dim:int=4) -> np.ndarray:
@@ -67,7 +69,7 @@ def spiegelung(normale, punkte,offset=None):
     if type(offset)==type(None):
         offset=np.zeros((1,len(normale)))
     normale/=np.linalg.norm(normale)
-    return punkte-2*normale*(punkte-offset)@normale
+    return punkte-(punkte-offset)@normale*normale*2
 def spiegelung_gen(spiegel_raum,punkte,offset=None):
     assert(len(punkte)>0)
     if type(offset)==type(None):
@@ -99,12 +101,13 @@ def winkel(vektor1, vektor2):
 
 def schnitt(raum1,raum2):
     return orthogonal_raum(np.concatenate((raum1,raum2)).T)[:,:len(raum1)]@raum1
+
 class plat_solid:
-    def __init__(self,schäfli_list,higher_order=None):
+    def __init__(self,schäfli_list,higher_order=None,vec_ortho=None):
         if higher_order!=None:
-            self.points=[p for p in schäfli_list]
+            self.points=schäfli_list
             self.higher_order=higher_order
-            self.mid=sum(self.points)/len(self.points)
+            self.vec_ortho=vec_ortho
             return
         if len(schäfli_list)==1:
             num_points=schäfli_list[0]
@@ -112,20 +115,59 @@ class plat_solid:
             matrix_rot=np.array([[np.cos(angle),-np.sin(angle)],[np.sin(angle),
                                                                 np.cos(angle)]])
             self.points=[np.array([0,0]),np.array([1,0])]
+            self.vec_ortho=[np.array([0,1])]
             for _ in range(num_points-2):
                 self.points.append(self.points[-1]+matrix_rot@(self.points[-1]-
                                                                self.points[-2]))
+                self.vec_ortho.append(matrix_rot@self.vec_ortho[-1])
+            self.vec_ortho.append(matrix_rot@self.vec_ortho[-1])
             self.higher_order=[[{i} for i in range(num_points)],
                                [{i,(i+1)%num_points} for i in range(num_points)],
                                [{i for i in range(num_points)}]]
-            self.mid=sum(self.points)/len(self.points)
             return
         dim=len(schäfli_list)+1
         a=plat_solid(schäfli_list[:-1]).copy(dim)
         parts=[a]
         self.vec_ortho=[np.eye(dim)[-1]]
         #winkel herausfinden (TODO)
-        angle=np.pi/2
+        angle_rot=2*np.pi/schäfli_list[-1]
+        boundary_m3=a.get_points(dim-3,0)
+        mat_ortho=orthogonal_raum(boundary_m3[1:]-boundary_m3[0]) if len(boundary_m3)>1 else orthogonal_raum([],3)
+        mat_ortho=diff(mat_ortho,[np.eye(dim)[-1]])
+        b=a.copy()
+        c=a.copy()
+        c.points=list(rotation(angle_rot,mat_ortho,c.points,boundary_m3[0]))
+        dir_b=sum(boundary_m3)/len(boundary_m3)-sum(b.points)/len(b.points)
+        dir_c=sum(boundary_m3)/len(boundary_m3)-sum(c.points)/len(c.points)
+        dir_b/=np.linalg.norm(dir_b)
+        dir_c/=np.linalg.norm(dir_c)
+        boundary_m2_b=min([i for (i,x) in enumerate(b.higher_order[dim-2]) if 0 in x])
+        boundary_m2_c=max([i for (i,x) in enumerate(c.higher_order[dim-2]) if 0 in x])
+        boundary_m3_indices=a.reduce_order(dim-3,0,0)
+        point_b=b.points[min([x for x in b.reduce_order(dim-2,0,boundary_m2_b) if not x in boundary_m3_indices])]
+        vec_b=dir_b@(boundary_m3[0]-point_b)*dir_b
+        points_c=[x for (i,x) in enumerate(c.points) if i in c.reduce_order(dim-2,0,boundary_m2_c) and not i in boundary_m3_indices]
+        for point_c in points_c:
+            vec_c=dir_c@(boundary_m3[0]-point_c)*dir_c
+            mat=np.stack((vec_b,vec_c,point_b-point_c),axis=1)
+            ortho_basis=orthogonal_raum(mat)
+            if len(ortho_basis)!=1:
+                print("huh!")
+                exit(1)
+            if abs(ortho_basis[0][0]+ortho_basis[0][1])>1e-5:
+                continue
+            coefs=ortho_basis[0]/ortho_basis[0][2]
+            angle_meet=np.acos(1+coefs[1])
+            break
+        b.rotate(dim-3,0,angle_meet,np.eye(dim)[-1])
+        c.rotate(dim-3,0,angle_meet,np.eye(dim)[-1])
+        boundary=b.get_points(dim-2,boundary_m2_b)
+        vec_b=sum(b.points)/len(b.points)-sum(boundary)/len(boundary)
+        vec_c=sum(c.points)/len(c.points)-sum(boundary)/len(boundary)
+        vec_b/=np.linalg.norm(vec_b)
+        vec_c/=np.linalg.norm(vec_c)
+        angle=np.pi-np.acos(vec_b@vec_c)
+        
         #körper konstruieren
         self.points=a.points.copy()
         self.higher_order=deepcopy(a.higher_order)
@@ -154,11 +196,10 @@ class plat_solid:
                     index_adapted=i
                     break
             to_be_added.flip(dim-2,index_adapted)
-            points_there=to_be_added.reduce_order(dim-2,0,index_adapted)
-            point_out=to_be_added.points[min([i for i in range(len(to_be_added.points)) if not i in points_there])]-points_target[0]
-            mat=orthonormalisierung(np.array(points_target[1:])-points_target[0])
-            to_be_added.points=[x for x in rotation(angle,[self.vec_ortho[to_be_mirrored],point_out-mat.T@mat@point_out],to_be_added.points,points_target[0])]
-            self.vec_ortho.append(rotation(angle,[self.vec_ortho[to_be_mirrored],point_out-mat.T@mat@point_out],[self.vec_ortho[to_be_mirrored]])[0])
+            point_out=sum(to_be_added.points)/len(to_be_added.points)-sum(points_target)/len(points_target)
+            point_out/=np.linalg.norm(point_out)
+            to_be_added.points=list(rotation(angle,[self.vec_ortho[to_be_mirrored],point_out],to_be_added.points,points_target[0]))
+            self.vec_ortho.append(rotation(angle,[self.vec_ortho[to_be_mirrored],point_out],[self.vec_ortho[to_be_mirrored]])[0])
             index_change=[[]]
             for i in range(len(to_be_added.points)):
                 isIn=False
@@ -193,7 +234,7 @@ class plat_solid:
         if dim==None:
             dim=len(self.points[0])
         assert(dim>=len(self.points[0]))
-        return plat_solid(np.concatenate((self.points,np.zeros((len(self.points),dim-len(self.points[0])))),axis=1),deepcopy(self.higher_order))
+        return plat_solid(list(np.concatenate((self.points,np.zeros((len(self.points),dim-len(self.points[0])))),axis=1)),deepcopy(self.higher_order),list(np.concatenate((self.vec_ortho,np.zeros((len(self.vec_ortho),dim-len(self.vec_ortho[0])))),axis=1)))
     def reduce_order(self,order,orderNew,index:int):
         objects_included={index}
         for order_curr in range(order-1,orderNew-1,-1):
@@ -205,7 +246,14 @@ class plat_solid:
     def flip(self,order,index):
         plane=self.get_points(order,index)
         plane_basis=plane[1:]-plane[0]
-        self.points=[x for x in spiegelung_gen(plane_basis,self.points,plane[0])]
+        self.points=list(spiegelung_gen(plane_basis,self.points,plane[0]))
+        self.vec_ortho=list(spiegelung_gen(plane_basis,self.vec_ortho))
+    def rotate(self,order,index,angle,dir):
+        points_staying=self.get_points(order,index)
+        vec_out=sum(self.points)/len(self.points)-sum(points_staying)/len(points_staying)
+        vec_out/=np.linalg.norm(vec_out)
+        self.points=list(rotation(angle,[dir,vec_out],self.points,sum(points_staying)/len(points_staying)))
+        self.vec_ortho=list(rotation(angle,[dir,vec_out],self.points))
     def get_unmatched(self,target):
         dim=len(self.points[0])
         return [x for x in range(len(self.higher_order[dim-3])) if len([1 for z in self.higher_order[dim-1] if any([x in self.higher_order[dim-2][y] for y in z])])!=target]
