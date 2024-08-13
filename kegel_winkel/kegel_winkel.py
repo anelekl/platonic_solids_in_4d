@@ -4,7 +4,9 @@ import random
 import numpy as np
 from matplotlib import pyplot as plt #für die graphiken
 
-
+def kegel_verhältnis(dim,sample_size,winkel):
+    sample=list(filter(lambda x:np.linalg.norm(x)<1,2*np.random.random((sample_size,dim))-1))
+    return len(list(filter(lambda x:acos(x[0]/np.linalg.norm(x))<winkel,sample)))/len(sample)
 
 for dim in range(4,5):
     #Öffnungswnkel des Kegels
