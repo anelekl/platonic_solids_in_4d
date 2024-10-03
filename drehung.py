@@ -111,9 +111,9 @@ class plat_solid:
             return
         if len(schäfli_list)==1:
             num_points=schäfli_list[0]
-            angle=2*np.pi/num_points
-            matrix_rot=np.array([[np.cos(angle),-np.sin(angle)],[np.sin(angle),
-                                                                np.cos(angle)]])
+            self.angle=2*np.pi/num_points
+            matrix_rot=np.array([[np.cos(self.angle),-np.sin(self.angle)],[np.sin(self.angle),
+                                                                np.cos(self.angle)]])
             self.points=[np.array([0,0]),np.array([1,0])]
             self.vec_ortho=[np.array([0,1])]
             for _ in range(num_points-2):
@@ -124,6 +124,7 @@ class plat_solid:
             self.higher_order=[[{i} for i in range(num_points)],
                                [{i,(i+1)%num_points} for i in range(num_points)],
                                [{i for i in range(num_points)}]]
+            self.angle_in=np.pi-self.angle
             return
         dim=len(schäfli_list)+1
         a=plat_solid(schäfli_list[:-1]).copy(dim)
@@ -166,7 +167,8 @@ class plat_solid:
         vec_c=sum(c.points)/len(c.points)-sum(boundary)/len(boundary)
         vec_b/=np.linalg.norm(vec_b)
         vec_c/=np.linalg.norm(vec_c)
-        angle=np.pi-np.acos(vec_b@vec_c)
+        self.angle_in=np.acos(vec_b@vec_c)
+        self.angle=np.pi-self.angle_in
         
         #körper konstruieren
         self.points=a.points.copy()
@@ -198,8 +200,8 @@ class plat_solid:
             to_be_added.flip(dim-2,index_adapted)
             point_out=sum(to_be_added.points)/len(to_be_added.points)-sum(points_target)/len(points_target)
             point_out/=np.linalg.norm(point_out)
-            to_be_added.points=list(rotation(angle,[self.vec_ortho[to_be_mirrored],point_out],to_be_added.points,points_target[0]))
-            self.vec_ortho.append(rotation(angle,[self.vec_ortho[to_be_mirrored],point_out],[self.vec_ortho[to_be_mirrored]])[0])
+            to_be_added.points=list(rotation(self.angle,[self.vec_ortho[to_be_mirrored],point_out],to_be_added.points,points_target[0]))
+            self.vec_ortho.append(rotation(self.angle,[self.vec_ortho[to_be_mirrored],point_out],[self.vec_ortho[to_be_mirrored]])[0])
             index_change=[[]]
             for i in range(len(to_be_added.points)):
                 isIn=False
@@ -292,165 +294,165 @@ class koerper():
         return rotation(winkel, E, self.ecken)
 
     pass
+if __name__=="__main__":
+    körper_drehung = False ## körper_drehung macht das Winkel finden
 
-körper_drehung = False ## körper_drehung macht das Winkel finden
+    if körper_drehung:
+        # Funktioniert erstmal nur für Eckenfigur <3,3>
 
-if körper_drehung:
-    # Funktioniert erstmal nur für Eckenfigur <3,3>
+        #3 Ecken: die erste, die "mittlere", die an der alles aufeinander trifft: NICHT MIT ANGEBEN -- weil die in 0 gesetzt wurde
+        # ich glaube, die sind alle unnötig, weil sie nicht mehr gebraucht werden
+        a = - (np.sqrt(5)+1)/4
+        c = (1 - (np.sqrt(5) + 1)/2)/2
+        b = 1/2
 
-    #3 Ecken: die erste, die "mittlere", die an der alles aufeinander trifft: NICHT MIT ANGEBEN -- weil die in 0 gesetzt wurde
-    # ich glaube, die sind alle unnötig, weil sie nicht mehr gebraucht werden
-    a = - (np.sqrt(5)+1)/4
-    c = (1 - (np.sqrt(5) + 1)/2)/2
-    b = 1/2
+        # hier stehen ausgeklammert die ganzen Körper, die ich so bruache. wäre super, wenn die in einer Variablen (dictionary) wären und mann sich aussuchen kann, was man hier dann abruft
+        # Körper, der nicht gedreht wird
+        dreid_korper = [(1,0,0),(0,1,0),(0,0,1)]  #[(1, 0, 0), (0.5, sqrt(3)/2, 0) , (0.5, sqrt(3)/6, sqrt(2/3))] #  [(a,b,c), (b,c,a), (c,a,b)]  # [(1,0,0),(0,1,0),(0,0,1)]
 
-    # hier stehen ausgeklammert die ganzen Körper, die ich so bruache. wäre super, wenn die in einer Variablen (dictionary) wären und mann sich aussuchen kann, was man hier dann abruft
-    # Körper, der nicht gedreht wird
-    dreid_korper = [(1,0,0),(0,1,0),(0,0,1)]  #[(1, 0, 0), (0.5, sqrt(3)/2, 0) , (0.5, sqrt(3)/6, sqrt(2/3))] #  [(a,b,c), (b,c,a), (c,a,b)]  # [(1,0,0),(0,1,0),(0,0,1)]
+        #fester_korper = koerper(drei_zu_vier(dreid_korper))
 
-    #fester_korper = koerper(drei_zu_vier(dreid_korper))
-
-    #setzt die Körper aneinander, wie das bei ner Eckenfigur von <3,3> zu erwarten ist
-    alle_korper = []
-    for i in range(3):
-        normal = np.cross(dreid_korper[(i+2)%3],dreid_korper[(i+1)%3])
-        gespiegelt = spiegelung(normal, [dreid_korper[(i)%3]] )
-        langer = drei_zu_vier(gespiegelt)
-        alle_korper.append(koerper([langer]))
-
-
-    for i in alle_korper:
-        print("-------------" , i.ecken)
-
-    fester_korper = koerper(drei_zu_vier(dreid_korper))
-    print(fester_korper.ecken)
-
-    Winkel = np.linspace( 0,np.pi,1001) # winkel, die ausprobiert werden, wäre super, wenn man das durch Variablen irgenwo eingeben könnte
-    distanz = [100 for i in range(3) ] # variable, in die dann der Abstand zwischen den Ecken geschrieben wird
-    wirkliche_distanz = [100 for i in range(3)] #irgendwas, weil dinge nicht funktioniert haben
-    wirklicher_winkel = [10 for i in range(3)]
-    kl_winkel = [10 for i in range(3) ]
-
-
-    for w in Winkel:
-        #print()
-        gedrehter_korper = []
-        # dreht die 3 körper und fühgt sie gedrehter_korper hinzu
-        for i in range(2):
-            gedrehter_korper.append(alle_korper[i].rotation(w,[fester_korper.ecken[(i+2)%3],fester_korper.ecken[(i+1)%3]]))
-        gedrehter_korper.append(alle_korper[2].rotation(-w,[fester_korper.ecken[(2+2)%3],fester_korper.ecken[(2+1)%3]]))
-
-        """for i in range(3):
-            print("gedereht ", i , gedrehter_korper[i])  """
-
-        # spruckt richtigen Winkel aus, wenn er getrofen wird
-        if np.allclose(gedrehter_korper[0], gedrehter_korper[1]):
-            print (w , "hier!!!!")
-
-
+        #setzt die Körper aneinander, wie das bei ner Eckenfigur von <3,3> zu erwarten ist
+        alle_korper = []
         for i in range(3):
-            #print(gedrehter_korper[i])
-
-            b = np.max(gedrehter_korper[i] - gedrehter_korper[(i+1)%3])
-            if b < distanz[i]:
-                distanz[i] = b
-                kl_winkel[i] = w
-
-            a = (gedrehter_korper[i] - gedrehter_korper[(i+1)%3])@(gedrehter_korper[i] - gedrehter_korper[(i+1)%3]).T
-            if  a < wirkliche_distanz[i]:
-                wirkliche_distanz[i] = a
-                wirklicher_winkel[i] = w
-
-    print(distanz)
-    print(kl_winkel)
-    print(wirkliche_distanz , wirklicher_winkel)
+            normal = np.cross(dreid_korper[(i+2)%3],dreid_korper[(i+1)%3])
+            gespiegelt = spiegelung(normal, [dreid_korper[(i)%3]] )
+            langer = drei_zu_vier(gespiegelt)
+            alle_korper.append(koerper([langer]))
 
 
+        for i in alle_korper:
+            print("-------------" , i.ecken)
 
-### --- Variablen --- ###
-raumdrehung =False
+        fester_korper = koerper(drei_zu_vier(dreid_korper))
+        print(fester_korper.ecken)
 
-anzahl_punkte = 1_000_000
-anzahl_winkel = 100
-Winkel = [1.82347889] #np.linspace(0,2*pi,anzahl_winkel) #Winkel um den/die gedreht wird
-r = 500 # Radius für regelmäßige Anordnung
-dim = 4 # Dimension
-a = 3 #Anzahl der drehebenen
-Daten = [] #da werden die Daten gespeichert
-Winkel_Daten = []
-
-Raum_anfang = raum([(0,0,0,1)])
-#print(Raum_anfang.normal)
-Ebenen_Matrix = np.array([[(1, 0, 0, 0), (0.5, np.sqrt(3)/2, 0, 0) , (0.5, np.sqrt(3)/6, np.sqrt(2/3), 0)]]).reshape(a,dim)
-
-randomm = True
-
-### --- --- ###
+        Winkel = np.linspace( 0,np.pi,1001) # winkel, die ausprobiert werden, wäre super, wenn man das durch Variablen irgenwo eingeben könnte
+        distanz = [100 for i in range(3) ] # variable, in die dann der Abstand zwischen den Ecken geschrieben wird
+        wirkliche_distanz = [100 for i in range(3)] #irgendwas, weil dinge nicht funktioniert haben
+        wirklicher_winkel = [10 for i in range(3)]
+        kl_winkel = [10 for i in range(3) ]
 
 
-punkte_zaehler = 0
-punkte = []
-anfangs_zeit = time.time()
+        for w in Winkel:
+            #print()
+            gedrehter_korper = []
+            # dreht die 3 körper und fühgt sie gedrehter_korper hinzu
+            for i in range(2):
+                gedrehter_korper.append(alle_korper[i].rotation(w,[fester_korper.ecken[(i+2)%3],fester_korper.ecken[(i+1)%3]]))
+            gedrehter_korper.append(alle_korper[2].rotation(-w,[fester_korper.ecken[(2+2)%3],fester_korper.ecken[(2+1)%3]]))
+
+            """for i in range(3):
+                print("gedereht ", i , gedrehter_korper[i])  """
+
+            # spruckt richtigen Winkel aus, wenn er getrofen wird
+            if np.allclose(gedrehter_korper[0], gedrehter_korper[1]):
+                print (w , "hier!!!!")
 
 
-# Macht daten, wie datan_mach_programm.py nur werden hier für jeden Winkel die gleichen Punkte genommen. Das ist deutlich schneller, will ich aber eigentlich nicht
-# Also ich hätte gerne die möglichkeit, mit einem boolean hin und her schalten zu können
-if raumdrehung:
+            for i in range(3):
+                #print(gedrehter_korper[i])
 
-    # regelmäßige Anordnung der Punkte, ist aber scheiße, sollte trotzdem als Möglichkeit vorhanden sein
-    if not randomm:
-        zeit = time.time()
-        for i in  range(-r,r):
-            for j in range(-r,r):
-                for k in range(-r,r):
-                    for l in range(-r,r):
-                        p = np.array([i/r,j/r,k/r,l/r]).reshape(1,4)
-                        if np.dot(p,p.T) <= 1:
-                            punkte += [p]
-        print(time.time()-zeit)
-        print(len(punkte))
+                b = np.max(gedrehter_korper[i] - gedrehter_korper[(i+1)%3])
+                if b < distanz[i]:
+                    distanz[i] = b
+                    kl_winkel[i] = w
 
-    # random anordnung der Punkte (bruacht super viel Zeit, dass muss sehr viel schneller werden)
-    if randomm:
-        while punkte_zaehler < anzahl_punkte:
-            p = np.array([[random.randint(-r,r)/r for i in range(4)]]).reshape(1,4)
+                a = (gedrehter_korper[i] - gedrehter_korper[(i+1)%3])@(gedrehter_korper[i] - gedrehter_korper[(i+1)%3]).T
+                if  a < wirkliche_distanz[i]:
+                    wirkliche_distanz[i] = a
+                    wirklicher_winkel[i] = w
 
-            if np.dot(p,p.T) <= 1: #wenn in Späre
-                punkte_zaehler += 1
-                punkte += [p]
+        print(distanz)
+        print(kl_winkel)
+        print(wirkliche_distanz , wirklicher_winkel)
 
 
-    for w in Winkel:
 
-        zeit = time.time()
-        print("still running" , w)
-        Normal = [Raum_anfang.normal]
-        Winkel_Neu = []
+    ### --- Variablen --- ###
+    raumdrehung =False
 
-        #Drehung der Ebenen mit Fallunterscheidung
-        for i in range(a):
-            if i != 2:
-                neu = (Raum_anfang.rotation(w, [Ebenen_Matrix[i],Ebenen_Matrix[(i+1)%3]])).reshape(1,4).tolist()
+    anzahl_punkte = 1_000_000
+    anzahl_winkel = 100
+    Winkel = [1.82347889] #np.linspace(0,2*pi,anzahl_winkel) #Winkel um den/die gedreht wird
+    r = 500 # Radius für regelmäßige Anordnung
+    dim = 4 # Dimension
+    a = 3 #Anzahl der drehebenen
+    Daten = [] #da werden die Daten gespeichert
+    Winkel_Daten = []
 
-            else: neu = (Raum_anfang.rotation(-w, [Ebenen_Matrix[i],Ebenen_Matrix[(i+1)%3]])).reshape(1,4).tolist()
-            neuer_winkel = winkel(np.array(Raum_anfang.normal) , np.array(neu))
+    Raum_anfang = raum([(0,0,0,1)])
+    #print(Raum_anfang.normal)
+    Ebenen_Matrix = np.array([[(1, 0, 0, 0), (0.5, np.sqrt(3)/2, 0, 0) , (0.5, np.sqrt(3)/6, np.sqrt(2/3), 0)]]).reshape(a,dim)
 
-            Normal.append(neu)
-            Winkel_Neu.append(neuer_winkel)
+    randomm = True
 
-        Daten.append(bereich_test(punkte, Normal)) #testet in welchem Bereich die Punkte sind und gibt eine Liste mit Anzahl für alle bereiche aus (siehe oben)
-        print(time.time()-zeit) #misst die Zeit
+    ### --- --- ###
 
 
-    #with open('el_20240106_07.txt', "a") as speicher:
-     #   print(punkte_zaehler, "; \n", np.array(Daten).reshape(len(Winkel),16).tolist(), " \n ;", Winkel,  "\n \n", file=speicher)
+    punkte_zaehler = 0
+    punkte = []
+    anfangs_zeit = time.time()
 
-    print(time.time()- anfangs_zeit)
-    print("fretig")
-    print(Daten) #das kann gut in ein Dokument geschrieben werden
-    # Bezeichungsformat "name von Programm, dass die Daten erstellt hat"_"Datum, sodass es eindeutig ist, also mit Minuten und sekunden oder so"
-    #alternativ Datum nur bis tag und ne automatische durchnummerierung
 
-#print(orthogonal_raum([[1,0,0,3],[5,9,27,15]],4))
-#print(orthogonal_ebene([[1,0,0,3],[5,9,27,15]],4))
-print(rot_matrix(0))
+    # Macht daten, wie datan_mach_programm.py nur werden hier für jeden Winkel die gleichen Punkte genommen. Das ist deutlich schneller, will ich aber eigentlich nicht
+    # Also ich hätte gerne die möglichkeit, mit einem boolean hin und her schalten zu können
+    if raumdrehung:
+
+        # regelmäßige Anordnung der Punkte, ist aber scheiße, sollte trotzdem als Möglichkeit vorhanden sein
+        if not randomm:
+            zeit = time.time()
+            for i in  range(-r,r):
+                for j in range(-r,r):
+                    for k in range(-r,r):
+                        for l in range(-r,r):
+                            p = np.array([i/r,j/r,k/r,l/r]).reshape(1,4)
+                            if np.dot(p,p.T) <= 1:
+                                punkte += [p]
+            print(time.time()-zeit)
+            print(len(punkte))
+
+        # random anordnung der Punkte (bruacht super viel Zeit, dass muss sehr viel schneller werden)
+        if randomm:
+            while punkte_zaehler < anzahl_punkte:
+                p = np.array([[random.randint(-r,r)/r for i in range(4)]]).reshape(1,4)
+
+                if np.dot(p,p.T) <= 1: #wenn in Späre
+                    punkte_zaehler += 1
+                    punkte += [p]
+
+
+        for w in Winkel:
+
+            zeit = time.time()
+            print("still running" , w)
+            Normal = [Raum_anfang.normal]
+            Winkel_Neu = []
+
+            #Drehung der Ebenen mit Fallunterscheidung
+            for i in range(a):
+                if i != 2:
+                    neu = (Raum_anfang.rotation(w, [Ebenen_Matrix[i],Ebenen_Matrix[(i+1)%3]])).reshape(1,4).tolist()
+
+                else: neu = (Raum_anfang.rotation(-w, [Ebenen_Matrix[i],Ebenen_Matrix[(i+1)%3]])).reshape(1,4).tolist()
+                neuer_winkel = winkel(np.array(Raum_anfang.normal) , np.array(neu))
+
+                Normal.append(neu)
+                Winkel_Neu.append(neuer_winkel)
+
+            Daten.append(bereich_test(punkte, Normal)) #testet in welchem Bereich die Punkte sind und gibt eine Liste mit Anzahl für alle bereiche aus (siehe oben)
+            print(time.time()-zeit) #misst die Zeit
+
+
+        #with open('el_20240106_07.txt', "a") as speicher:
+        #   print(punkte_zaehler, "; \n", np.array(Daten).reshape(len(Winkel),16).tolist(), " \n ;", Winkel,  "\n \n", file=speicher)
+
+        print(time.time()- anfangs_zeit)
+        print("fretig")
+        print(Daten) #das kann gut in ein Dokument geschrieben werden
+        # Bezeichungsformat "name von Programm, dass die Daten erstellt hat"_"Datum, sodass es eindeutig ist, also mit Minuten und sekunden oder so"
+        #alternativ Datum nur bis tag und ne automatische durchnummerierung
+
+    #print(orthogonal_raum([[1,0,0,3],[5,9,27,15]],4))
+    #print(orthogonal_ebene([[1,0,0,3],[5,9,27,15]],4))
+    print(rot_matrix(0))
