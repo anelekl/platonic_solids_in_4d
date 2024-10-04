@@ -1,0 +1,56 @@
+\documentclass[12pt,a3paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[german]{babel}
+%\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{makeidx}
+\usepackage{graphicx}
+\usepackage[left=2.5cm,right=2.5cm,top=2cm,bottom=2cm]{geometry}
+\author{Elena Kleinwort}
+
+\newtheorem{theorem}{Aussage}
+\newtheorem{teil}{Teil}
+\begin{document}
+
+\renewcommand{\arraystretch}{1.2}
+
+\begin{theorem}
+
+Der durch 4 Punkte auf der Einheitssphäre $\mathbb{S}^3$ definierte sphärische Tetraeder hat ein größeres Volumen als der durch die gleichen Punkte definierte euklidische Tetraeder. (Und das müsste sich eigentlich auf alle dimensionen verallgemeinern lassen.)
+
+\end{theorem}
+
+\begin{teil}
+Der Abstand von jedem Punkt des euklidischen Tetraeders zum Nullpunkt ist $ \leq 1$.
+\end{teil}
+
+\begin{proof}
+Jeder Punkt auf der Kante zwischen den Punkten $v_1$ und $v_2$ lässt sich als $v_1 + (v_2 - v_1)\cdot t = (1-t) v_1 + t v_2 $. Die Norm dieses Vektors ist:
+
+\begin{eqnarray}
+\begin{array}{rll}
+\lVert (1-t) v_1 + t v_2 \rVert  =& ((1-t) x_1 + t  x_2)^2 + ((1-t) y_1 + t  y_2)^2 + ((1-t) z_1 + t  z_2)^2 &\\
+ =& (1-t)^2x_1^2 + t^2x_2^2 + (1-t)tx_1x_2   
+ +  (1-t)^2y_1^2 + t^2y_2^2 + (1-t)ty_1y_2  
+ +  (1-t)^2z_1^2 + t^2z_2^2 + (1-t)tz_1z_2  &\\
+ = & (1-t)^2 \lVert v_1 \rVert + t^2 \lVert v_2 \rVert  + (1-t)t \langle v_1, v_2 \rangle &\\
+ = & (1-t)^2 + t^2 + (1-t)t \langle v_1, v_2 \rangle &\\
+ = & 1 - 2t + 2t^2 + (t - t^2) \langle v_1, v_2 \rangle &\\
+ = & 1 - 2(t - t^2) + (t - t^2) \langle v_1, v_2 \rangle &\\
+ = & 1 + (t - t^2) (\langle v_1, v_2 \rangle -2) &\\
+ \leq & 1 + (t - t^2) (1 -2) &\\
+ = & 1 - (t - t^2) \leq 1&\\
+\end{array}
+\end{eqnarray}
+
+Alle anderen Punkte liegen auf Strecken zwischen Punkten auf diesem Kanten. Mit dem gleichen Argument Ergibt sich die Behaupttung somit für alle Punkte des euklidischen Tetraeders.
+
+\end{proof}
+
+ 
+
+
+\end{document}
