@@ -100,7 +100,7 @@ def winkel(vektor1, vektor2):
     return np.acos(vektor1@vektor2)
 
 def schnitt(raum1,raum2):
-    return orthogonal_raum(np.concatenate((raum1,raum2)).T)[:,:len(raum1)]@raum1
+    return orthonormalisierung(orthogonal_raum(np.concatenate((raum1,raum2)).T)[:,:len(raum1)]@raum1)
 
 class plat_solid:
     def __init__(self,schäfli_list,higher_order=None,vec_ortho=None):
