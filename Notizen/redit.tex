@@ -1,0 +1,14 @@
+\documentclass{article} 
+\usepackage{amsmath, amssymb}
+
+\begin{document}
+
+Given four unit vectors ($ \mathbf{a}, \mathbf{b}, \mathbf{c}, \mathbf{d} $) in 4-space defining a spherical tetrahedron, the volume of the tetrahedron can be estimated using a Monte Carlo method:
+
+\begin{itemize}
+\item Generate $ N $ random points within the unit 4-ball. 
+
+\item Determine the number of points $ N_{\text{inside}} $ that lie inside the spherical tetrahedron. A point $ \mathbf{x} $ is inside the tetrahedron if $ \mathbf{x} \cdot \mathbf{a} \geq 0 $, $ \mathbf{x} \cdot \mathbf{b} \geq 0 $, $ \mathbf{x} \cdot \mathbf{c} \geq 0 $, and $ \mathbf{x} \cdot \mathbf{d} \geq 0 $. \item Estimate the volume $ V $ of the tetrahedron as: \[ V = \frac{N_{\text{inside}}}{N} \cdot V_{\text{4-ball}} \] where $ V_{\text{4-ball}} $ is the volume of the unit 4-ball.
+\end{itemize} 
+
+\end{document} 
