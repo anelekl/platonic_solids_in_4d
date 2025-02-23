@@ -2,11 +2,33 @@ from math import *
 import numpy as np
 from matplotlib import pyplot as plt
 import random
+import time
+
+
+def orthonormalisierung(vektoren) -> np.ndarray:
+    M = np.array(vektoren, dtype=np.float64)
+    anzahl = len(vektoren)
+    k = 0
+    while k<anzahl:
+        M[k] = M[k] - sum([M[j]@M[k] * M[j] for j in range(k)])
+        if(np.linalg.norm(M[k]) < 1e-10):
+            anzahl -= 1
+            for i in range(k,anzahl):
+                M[i]=M[i+1]
+            continue
+        M[k] = M[k] / np.linalg.norm(M[k])
+        k += 1
+    return M[:anzahl]
+
+def dreieck_neu(p1,p2,p3):
+    dr = np.array([p1, p2, p3])
+    #return abs(np.linalg.det(drehung.orthonormalisierung([(x-tetra[0]) for x in tetra[1:]])@np.array([x-tetra[0] for x in tetra[1:]]).T))/6
+    if len(orthonormalisierung([(x-dr[0]) for x in dr[1:]])) == 1:
+        return 0 
+    else:
+        return abs(np.linalg.det( orthonormalisierung([(x-dr[0]) for x in dr[1:]]) @ np.array([x-dr[0] for x in dr[1:]]).T ))/2
 
 def dreieck(p1,p2,p3):
-    
-
-def dreieck_alt(p1,p2,p3):
     p = [np.array(p1), np.array(p2), np.array(p3)]
     # Translation
     p = np.array([p[i] - np.array(p1) for i in [0,1,2]])
@@ -33,7 +55,7 @@ def dreieck_alt(p1,p2,p3):
     A = abs(p[1][0] * p[2][1] /2)
     return A
 
-N = 30 # Punkte
+N = 10 # Punkte
 def kurve(Q, epsi = 0.01, P = [np.array([0,i/N,0]) for i in range(N+1)], K = 100_000):
     N = len(P)-1
     ev = np.array([epsi, 0, 0])
@@ -89,6 +111,20 @@ def exp_verteilung(N_div2, Qx):
     return P
 
 
+def nP(Qs, epsi, P,K):
+    
+"""d1,d2,d3 = [0,0,1],[0,2,3],[4,5,6]
+
+t0 = time.time()
+print()
+t1= time.time()
+print(dreieck(d1,d2,d3))
+t2 = time.time()
+print(dreieck_alt(d1,d2,d3))
+t3 = time.time()
+
+print("Fehler: ", t1-t0, "Neu: ", t2-t1, "Alt: ", t3-t2  )"""
+
 # --- START ---
 einP = False
 zweiP = True
@@ -101,14 +137,14 @@ if zweiP:
 
     epsi = 1/(N*50)
     K = 200
-
-    P = kurve_2(Q_1, Q_2 ,epsi=epsi, K=30_000)[0]
+    t0 = time.time()
+    P = kurve_2(Q_1, Q_2 ,epsi=epsi, K=10_000)[0]
 
     x = [P[i][0] for i in range(len(P))]
     y = [P[i][1] for i in range(len(P))]
 
-    P2 = kurve_2(Q1, Q2 ,epsi=epsi,P=P, K=700_000)[0]
-
+    P2 = kurve_2(Q1, Q2 ,epsi=epsi,P=P, K=100_000)[0]
+    print(time.time()-t0)
     x2 = [P2[i][0] for i in range(len(P2))]
     y2 = [P2[i][1] for i in range(len(P2))]
 
@@ -117,7 +153,7 @@ if zweiP:
     plt.scatter(Q2[0], Q2[1])
     plt.plot(x,y)
     plt.plot(x2,y2)
-    plt.savefig("2dto3d_rand2_08.png")
+    plt.savefig("2dto3d_rand2_10.png")
     plt.show()
 
 
